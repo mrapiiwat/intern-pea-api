@@ -1,0 +1,54 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    container_name: intern-pea-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - minio
+    networks:
+      - intern-pea-network
+  db:
+    build:
+      context: ./db
+      dockerfile: dockerfile
+    container_name: intern-pea-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "${DATABASE_PORT}:5432"
+    volumes:
+      - intern_pea_postgres_data:/data
+
+    networks:
+      - intern-pea-network
+  minio:
+    image: minio/minio
+    container_name: intern-pea-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - intern_pea_minio_data:/data
+    networks:
+      - intern-pea-network
+
+volumes:
+  intern_pea_postgres_data:
+  intern_pea_minio_data:
+
+networks:
+  intern-pea-network:
+    driver: bridge

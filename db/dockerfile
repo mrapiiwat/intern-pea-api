@@ -1,0 +1,15 @@
+FROM postgres:18.1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-18-cron \
+    postgresql-18-tds-fdw \
+    freetds-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/postgresql.conf.sample \
+    && echo "cron.database_name = 'intern-pea'" >> /usr/share/postgresql/postgresql.conf.sample
+
+COPY INTERN-PEA.sql /docker-entrypoint-initdb.d/INTERN-PEA.sql
+
+EXPOSE 5432
+
