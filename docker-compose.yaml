@@ -5,6 +5,9 @@ services:
       dockerfile: dockerfile
     container_name: intern-pea-backend
     restart: unless-stopped
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     ports:
       - "8080:8080"
     depends_on:
@@ -12,6 +15,7 @@ services:
       - minio
     networks:
       - intern-pea-network
+
   db:
     build:
       context: ./db
@@ -25,7 +29,7 @@ services:
     ports:
       - "${DATABASE_PORT}:5432"
     volumes:
-      - intern_pea_postgres_data:/data
+      - intern_pea_postgres_data:/var/lib/postgresql
 
     networks:
       - intern-pea-network

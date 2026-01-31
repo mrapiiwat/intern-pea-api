@@ -1,0 +1,16 @@
+meta {
+  name: GET Department
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/dept
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,61 @@
+import { count, ilike } from "drizzle-orm";
+import { ConflictError } from "@/common/exceptions";
+import { isObject, isPostgresError } from "@/common/utils/type-guard";
+import { db } from "@/db";
+import { departments } from "@/db/schema";
+import type * as model from "./model";
+
+export class DepartmentService {
+  async findAll(query: model.GetDepartmentsQueryType) {
+    const { page = 1, limit = 20, search } = query;
+    const offset = (page - 1) * limit;
+
+    const whereClause = search
+      ? ilike(departments.name, `%${search}%`)
+      : undefined;
+
+    const data = await db
+      .select()
+      .from(departments)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(departments.name);
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(departments)
+      .where(whereClause);
+
+    const total = totalResult.count;
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+      },
+    };
+  }
+
+  async create(data: model.CreateDepartmentBodyType) {
+    try {
+      const [newDept] = await db.insert(departments).values(data).returning();
+
+      return newDept;
+    } catch (error: unknown) {
+      const err = isObject(error) && "cause" in error ? error.cause : error;
+
+      if (isPostgresError(err) && err.code === "23505") {
+        throw new ConflictError("ชื่อแผนกนี้มีอยู่ในระบบแล้ว");
+      }
+
+      throw error;
+    }
+  }
+}

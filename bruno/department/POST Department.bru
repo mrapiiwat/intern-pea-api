@@ -1,0 +1,25 @@
+meta {
+  name: POST Department
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/dept
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "โรงเรียนท่าอิฐศึกษา",
+    "location": "https://maps.app.goo.gl/eJdSjN2jY7pakB51A",
+    "latitude": 13.896991236817625,
+    "longitude": 100.47786448084128
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
