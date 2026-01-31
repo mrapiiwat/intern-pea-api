@@ -1,5 +1,6 @@
-import { count, ilike } from "drizzle-orm";
-import { ConflictError } from "@/common/exceptions";
+import { count, eq, ilike } from "drizzle-orm";
+import { NotFoundError } from "elysia";
+import { BadRequestError, ConflictError } from "@/common/exceptions";
 import { isObject, isPostgresError } from "@/common/utils/type-guard";
 import { db } from "@/db";
 import { departments } from "@/db/schema";
@@ -53,6 +54,34 @@ export class DepartmentService {
 
       if (isPostgresError(err) && err.code === "23505") {
         throw new ConflictError("ชื่อแผนกนี้มีอยู่ในระบบแล้ว");
+      }
+
+      throw error;
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      const [deletedDept] = await db
+        .delete(departments)
+        .where(eq(departments.id, id))
+        .returning();
+
+      if (!deletedDept) {
+        throw new NotFoundError(`ไม่พบข้อมูลแผนกรหัส ${id}`);
+      }
+
+      return {
+        success: true,
+        message: "ลบข้อมูลแผนกเรียบร้อยแล้ว",
+      };
+    } catch (error: unknown) {
+      const err = isObject(error) && "cause" in error ? error.cause : error;
+
+      if (isPostgresError(err) && err.code === "23503") {
+        throw new BadRequestError(
+          "ไม่สามารถลบข้อมูลนี้ได้ เนื่องจากข้อมูลถูกใช้งานอยู่ในส่วนอื่น (Foreign Key Constraint)"
+        );
       }
 
       throw error;

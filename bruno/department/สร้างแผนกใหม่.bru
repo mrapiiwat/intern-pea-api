@@ -1,0 +1,25 @@
+meta {
+  name: สร้างแผนกใหม่
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/dept
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "มหาวิทยาลัยธุรกิจบัณฑิตย์",
+    "location": "https://maps.app.goo.gl/VEAhpNZiY9soN4mz9",
+    "latitude": 13.870424302520977,
+    "longitude": 100.55147967131948
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

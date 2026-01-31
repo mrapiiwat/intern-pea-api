@@ -1,0 +1,16 @@
+meta {
+  name: ลบข้อมูลแผนก
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{url}}/dept/12
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

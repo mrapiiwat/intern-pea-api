@@ -4,7 +4,7 @@ import { DepartmentService } from "./service";
 
 const departmentService = new DepartmentService();
 
-export const department = new Elysia({ prefix: "/dept" })
+export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
   .get(
     "/",
     async ({ query, set }) => {
@@ -15,6 +15,11 @@ export const department = new Elysia({ prefix: "/dept" })
     },
     {
       query: model.GetDepartmentsQuery,
+      detail: {
+        summary: "ค้นหาข้อมูลแผนก (Search Departments)",
+        description:
+          "ดึงข้อมูลรายการแผนกทั้งหมด รองรับการค้นหาด้วยชื่อ (Search) และแบ่งหน้า (Pagination)",
+      },
     }
   )
   .post(
@@ -27,5 +32,26 @@ export const department = new Elysia({ prefix: "/dept" })
     },
     {
       body: model.CreateDepartmentBody,
+      detail: {
+        summary: "สร้างแผนกใหม่ (Create Department)",
+        description: "เพิ่มข้อมูลแผนกใหม่เข้าสู่ระบบ โดยชื่อแผนก (Name) ห้ามซ้ำกับที่มีอยู่",
+      },
+    }
+  )
+  .delete(
+    "/:id",
+    async ({ params: { id }, set }) => {
+      const response = departmentService.delete(id);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      params: model.params,
+      detail: {
+        summary: "ลบข้อมูลแผนก (Delete Department)",
+        description:
+          "ลบข้อมูลแผนกตาม ID ที่ระบุ (จะไม่สามารถลบได้หากมีข้อมูลอื่นอ้างอิงถึงแผนกนี้)",
+      },
     }
   );

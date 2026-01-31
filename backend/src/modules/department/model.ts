@@ -13,5 +13,9 @@ export const CreateDepartmentBody = t.Object({
   longitude: t.Numeric(),
 });
 
+export const params = t.Object({
+  id: t.Numeric(),
+});
+
 export type GetDepartmentsQueryType = typeof GetDepartmentsQuery.static;
 export type CreateDepartmentBodyType = typeof CreateDepartmentBody.static;
