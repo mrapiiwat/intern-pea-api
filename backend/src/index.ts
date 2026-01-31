@@ -1,7 +1,13 @@
+import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
+import { errorMiddleware } from "@/middlewares/error.middleware";
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
+const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
+const app = new Elysia()
+  .use(errorMiddleware)
+  .use(cors())
+  .listen(PORT);
 
 console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  `Server is running at http://${app.server?.hostname}:${app.server?.port}`
 );
