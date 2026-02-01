@@ -50,6 +50,7 @@ export const validationStatusEnum = pgEnum("validation_status_enum", [
   "VERIFIED",
   "REQUESTPENDING",
 ]);
+export const genderEnum = pgEnum("gender_enum", ["MALE", "FEMALE", "OTHER"]);
 
 export const docTypes = pgTable(
   "doc_types",
@@ -68,10 +69,10 @@ export const roles = pgTable(
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 100 }).notNull(),
     description: text(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -89,10 +90,12 @@ export const users = pgTable(
     username: varchar({ length: 100 }),
     phoneNumber: varchar("phone_number", { length: 20 }),
     email: varchar({ length: 150 }),
-    createdAt: timestamp("created_at", { mode: "string" })
+    gender: genderEnum("gender"),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -121,10 +124,10 @@ export const departments = pgTable(
     location: varchar({ length: 255 }),
     latitude: doublePrecision().notNull(),
     longitude: doublePrecision().notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -136,10 +139,10 @@ export const institutions = pgTable(
   {
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 200 }).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -169,11 +172,11 @@ export const studentProfiles = pgTable(
   {
     id: serial().primaryKey().notNull(),
     userId: varchar("user_id", { length: 50 }).notNull(),
-    picture: varchar({ length: 255 }),
+    image: varchar({ length: 255 }),
     hours: numeric({ precision: 10, scale: 2 }),
     institutionId: integer("institution_id").notNull(),
     facultyId: integer("faculty_id"),
-    majorId: integer("major_id"),
+    major: varchar("major", { length: 255 }),
     startDate: timestamp("start_date", { mode: "string" }),
     endDate: timestamp("end_date", { mode: "string" }),
     isActive: boolean("is_active"),
@@ -197,52 +200,32 @@ export const studentProfiles = pgTable(
       foreignColumns: [faculties.id],
       name: "student_profiles_faculty_id_fkey",
     }),
-    foreignKey({
-      columns: [table.majorId],
-      foreignColumns: [majors.id],
-      name: "student_profiles_major_id_fkey",
-    }),
     unique("student_profiles_user_id_key").on(table.userId),
-    unique("student_profiles_picture_key").on(table.picture),
+    unique("student_profiles_picture_key").on(table.image),
   ]
 );
 
 export const faculties = pgTable("faculties", {
   id: serial().primaryKey().notNull(),
   name: text().notNull(),
-  createdAt: timestamp("created_at", { mode: "string" })
+  createdAt: timestamp("created_at", { mode: "date" })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
-  updatedAt: timestamp("updated_at", { mode: "string" })
+  updatedAt: timestamp("updated_at", { mode: "date" })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
 });
-
-export const majors = pgTable(
-  "majors",
-  {
-    id: serial().primaryKey().notNull(),
-    name: text().notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => [unique("majors_name_key").on(table.name)]
-);
 
 export const sessions = pgTable(
   "sessions",
   {
     id: varchar({ length: 50 }).primaryKey().notNull(),
-    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
     token: text().notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     ipAddress: text("ip_address"),
@@ -277,10 +260,10 @@ export const accounts = pgTable(
     }),
     scope: text(),
     password: text(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -330,7 +313,7 @@ export const adminLogs = pgTable(
     id: serial().primaryKey().notNull(),
     adminId: varchar("admin_id", { length: 50 }).notNull(),
     action: text(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -351,10 +334,10 @@ export const notifications = pgTable(
     title: varchar({ length: 255 }).notNull(),
     message: text().notNull(),
     isRead: boolean("is_read").default(false),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -425,17 +408,17 @@ export const internshipPositions = pgTable(
     departmentId: integer("department_id").notNull(),
     location: varchar({ length: 255 }),
     positionCount: integer("position_count"),
-    majorId: integer("major_id"),
+    major: varchar("major", { length: 255 }),
     applyStart: timestamp("apply_start", { mode: "string" }),
     applyEnd: timestamp("apply_end", { mode: "string" }),
     jobDetails: text("job_details"),
     requirement: text(),
     benefits: text(),
     recruitmentStatus: recruitmentStatusEnum("recruitment_status").notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -444,11 +427,6 @@ export const internshipPositions = pgTable(
       columns: [table.departmentId],
       foreignColumns: [departments.id],
       name: "internship_positions_department_id_fkey",
-    }),
-    foreignKey({
-      columns: [table.majorId],
-      foreignColumns: [majors.id],
-      name: "internship_positions_major_id_fkey",
     }),
   ]
 );
@@ -459,10 +437,10 @@ export const favorites = pgTable(
     id: serial().primaryKey().notNull(),
     userId: varchar("user_id", { length: 50 }).notNull(),
     positionId: integer("position_id").notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -495,10 +473,10 @@ export const applicationStatuses = pgTable(
     internshipRound: integer("internship_round").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     activeKey: varchar("active_key", { length: 50 }),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -537,10 +515,10 @@ export const applicationInformations = pgTable(
     applicationStatusId: integer("application_status_id").notNull(),
     skill: text(),
     expectation: text(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -565,10 +543,10 @@ export const applicationDocuments = pgTable(
     docFile: varchar("doc_file", { length: 255 }).notNull(),
     validationStatus: validationStatusEnum("validation_status").notNull(),
     note: text(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -596,10 +574,10 @@ export const applicationMentors = pgTable(
     id: serial().primaryKey().notNull(),
     applicationStatusId: integer("application_status_id").notNull(),
     mentorId: integer("mentor_id").notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
@@ -624,16 +602,17 @@ export const applicationMentors = pgTable(
 export const dailyWorkLogs = pgTable(
   "daily_work_logs",
   {
+    id: serial().primaryKey().notNull(),
     userId: varchar("user_id", { length: 50 }).notNull(),
     workDate: timestamp("work_date", { mode: "string" }).notNull(),
     content: text(),
     mentorComment: text("mentor_comment"),
     isApprove: boolean("is_approve").default(false).notNull(),
     approveBy: integer("approve_by"),
-    createdAt: timestamp("created_at", { mode: "string" })
+    createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
+    updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },

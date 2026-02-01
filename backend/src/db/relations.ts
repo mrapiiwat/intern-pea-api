@@ -16,7 +16,6 @@ import {
   institutions,
   internshipPositions,
   leaveRequests,
-  majors,
   notifications,
   roles,
   sessions,
@@ -91,10 +90,6 @@ export const studentProfilesRelations = relations(
       fields: [studentProfiles.facultyId],
       references: [faculties.id],
     }),
-    major: one(majors, {
-      fields: [studentProfiles.majorId],
-      references: [majors.id],
-    }),
   })
 );
 
@@ -104,11 +99,6 @@ export const institutionsRelations = relations(institutions, ({ many }) => ({
 
 export const facultiesRelations = relations(faculties, ({ many }) => ({
   studentProfiles: many(studentProfiles),
-}));
-
-export const majorsRelations = relations(majors, ({ many }) => ({
-  studentProfiles: many(studentProfiles),
-  internshipPositions: many(internshipPositions),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -180,10 +170,7 @@ export const internshipPositionsRelations = relations(
       fields: [internshipPositions.departmentId],
       references: [departments.id],
     }),
-    major: one(majors, {
-      fields: [internshipPositions.majorId],
-      references: [majors.id],
-    }),
+
     favorites: many(favorites),
     applicationStatuses: many(applicationStatuses),
   })

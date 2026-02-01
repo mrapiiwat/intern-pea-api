@@ -5,6 +5,7 @@ CREATE TYPE public.leave_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED')
 CREATE TYPE public.recruitment_status_enum AS ENUM ('OPEN', 'CLOSE');
 CREATE TYPE public.app_status_enum AS ENUM ('PENDING_DOCUMENT', 'PENDING_INTERVIEW', 'PENDING_CONFIRMATION', 'ACCEPTED', 'COMPLETE');
 CREATE TYPE public.validation_status_enum AS ENUM ('INVALID', 'VERIFIED', 'REQUESTPENDING');
+CREATE TYPE public.gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
 CREATE TABLE public.roles (
   id SERIAL PRIMARY KEY,
@@ -50,14 +51,6 @@ CREATE TABLE public.faculties (
 );
 COMMENT ON TABLE public.faculties IS 'คณะ';
 
-CREATE TABLE public.majors (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-COMMENT ON TABLE public.majors IS 'สาขาวิชา';
-
 CREATE TABLE public.users (
   id VARCHAR(50) PRIMARY KEY,
   role_id INT NOT NULL,
@@ -67,6 +60,8 @@ CREATE TABLE public.users (
   username VARCHAR(100) UNIQUE,
   phone_number VARCHAR(20) UNIQUE,
   email VARCHAR(150) UNIQUE,
+  gender public.gender_enum,
+  email_verified BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -87,11 +82,11 @@ COMMENT ON TABLE public.staff_profiles IS 'โปรไฟล์พี่เล�
 CREATE TABLE public.student_profiles (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL UNIQUE,
-  picture VARCHAR(255) UNIQUE,
+  image VARCHAR(255) UNIQUE,
   hours DECIMAL(10,2),
   institution_id INT NOT NULL,
   faculty_id INT,
-  major_id INT,
+  major  VARCHAR,
   start_date TIMESTAMP,
   end_date TIMESTAMP,
   is_active BOOLEAN,
@@ -101,8 +96,7 @@ CREATE TABLE public.student_profiles (
 
   FOREIGN KEY (user_id) REFERENCES public.users(id),
   FOREIGN KEY (institution_id) REFERENCES public.institutions(id),
-  FOREIGN KEY (faculty_id) REFERENCES public.faculties(id),
-  FOREIGN KEY (major_id) REFERENCES public.majors(id)
+  FOREIGN KEY (faculty_id) REFERENCES public.faculties(id)
 );
 COMMENT ON TABLE public.student_profiles IS 'ข้อมูลเฉพาะนักศึกษา';
 
@@ -210,7 +204,7 @@ CREATE TABLE public.internship_positions (
   department_id INT NOT NULL,
   location VARCHAR(255),
   position_count INT,
-  major_id INT,
+  major VARCHAR(255),
   apply_start TIMESTAMP,
   apply_end TIMESTAMP,
   job_details TEXT,
@@ -220,8 +214,7 @@ CREATE TABLE public.internship_positions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (department_id) REFERENCES public.departments(id),
-  FOREIGN KEY (major_id) REFERENCES public.majors(id)
+  FOREIGN KEY (department_id) REFERENCES public.departments(id)
 );
 
 CREATE TABLE public.favorites (
@@ -298,6 +291,7 @@ CREATE TABLE public.application_mentors (
 );
 
 CREATE TABLE public.daily_work_logs (
+  id SERIAL PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL,
   work_date TIMESTAMP NOT NULL,
   content TEXT,
