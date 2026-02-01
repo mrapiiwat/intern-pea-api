@@ -13,6 +13,11 @@ const swaggerConfig = swagger({
         name: "Departments",
         description: "ข้อมูลแผนก, สำนักงานเขต, และพิกัดสถานที่ (Lat/Long)",
       },
+      {
+        name: "Role",
+        description:
+          "จัดการข้อมูลบทบาทและสิทธิ์การเข้าใช้งานระบบ (Roles & Permissions)",
+      },
     ],
   },
 });

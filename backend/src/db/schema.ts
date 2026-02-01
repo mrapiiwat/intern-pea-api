@@ -68,6 +68,12 @@ export const roles = pgTable(
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 100 }).notNull(),
     description: text(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => [unique("roles_name_key").on(table.name)]
 );

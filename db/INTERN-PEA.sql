@@ -9,7 +9,9 @@ CREATE TYPE public.validation_status_enum AS ENUM ('INVALID', 'VERIFIED', 'REQUE
 CREATE TABLE public.roles (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
-  description TEXT
+  description TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 COMMENT ON TABLE public.roles IS 'แยก Role ของ User ที่มีต่อระบบ';
 

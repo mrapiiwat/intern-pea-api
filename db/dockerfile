@@ -10,6 +10,7 @@ RUN echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/postgre
     && echo "cron.database_name = 'intern-pea'" >> /usr/share/postgresql/postgresql.conf.sample
 
 COPY INTERN-PEA.sql /docker-entrypoint-initdb.d/INTERN-PEA.sql
+COPY seeds.sql /docker-entrypoint-initdb.d/seeds.sql
 
 EXPOSE 5432
 

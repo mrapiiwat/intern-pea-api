@@ -1,18 +1,18 @@
 meta {
-  name: สร้างแผนกใหม่
+  name: แก้ไขข้อมูลแผนก
   type: http
-  seq: 2
+  seq: 4
 }
 
-post {
-  url: {{url}}/dept
+put {
+  url: {{url}}/dept/1
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "name": "มหาวิทยาลัยธุรกิจบัณฑิตsย์",
+    "name": "มหาวิทยาลัยธุรกิจบัณฑิตรย์",
     "location": "https://maps.app.goo.gl/VEAhpNZiY9soN4mz9",
     "latitude": 13.870424302520977,
     "longitude": 100.55147967131948

@@ -60,6 +60,33 @@ export class DepartmentService {
     }
   }
 
+  async update(id: number, data: model.UpdateDepartmentBodyType) {
+    try {
+      const [updatedDept] = await db
+        .update(departments)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(departments.id, id))
+        .returning();
+
+      if (!updatedDept) {
+        throw new NotFoundError(`ไม่พบข้อมูลแผนกรหัส ${id}`);
+      }
+
+      return updatedDept;
+    } catch (error: unknown) {
+      const err = isObject(error) && "cause" in error ? error.cause : error;
+
+      if (isPostgresError(err) && err.code === "23505") {
+        throw new ConflictError("ชื่อแผนกนี้มีอยู่ในระบบแล้ว");
+      }
+
+      throw error;
+    }
+  }
+
   async delete(id: number) {
     try {
       const [deletedDept] = await db

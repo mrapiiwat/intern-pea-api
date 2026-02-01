@@ -2,7 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { logger } from "elysia-logger";
 import { errorMiddleware } from "@/middlewares/error.middleware";
-import swagger from "./configs/swagger";
+import swagger from "./config/swagger";
 import modules from "./modules";
 
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;

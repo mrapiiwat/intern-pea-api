@@ -17,5 +17,8 @@ export const params = t.Object({
   id: t.Numeric(),
 });
 
+export const UpdateDepartmentBody = t.Partial(CreateDepartmentBody);
+
+export type UpdateDepartmentBodyType = typeof UpdateDepartmentBody.static;
 export type GetDepartmentsQueryType = typeof GetDepartmentsQuery.static;
 export type CreateDepartmentBodyType = typeof CreateDepartmentBody.static;

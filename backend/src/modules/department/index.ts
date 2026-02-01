@@ -22,6 +22,7 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
       },
     }
   )
+
   .post(
     "/",
     async ({ body, set }) => {
@@ -38,6 +39,25 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
       },
     }
   )
+
+  .put(
+    "/:id",
+    async ({ params: { id }, body, set }) => {
+      const response = departmentService.update(id, body);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      params: model.params,
+      body: model.UpdateDepartmentBody,
+      detail: {
+        summary: "แก้ไขข้อมูลแผนก (Update Department)",
+        description: "แก้ไขข้อมูลแผนกตาม ID ที่ระบุ (ชื่อห้ามซ้ำกับแผนกอื่น)",
+      },
+    }
+  )
+
   .delete(
     "/:id",
     async ({ params: { id }, set }) => {
