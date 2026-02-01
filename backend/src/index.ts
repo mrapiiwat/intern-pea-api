@@ -9,6 +9,7 @@ import modules from "@/modules";
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
 const app = new Elysia()
   .use(cors())
+  .all("/api/auth/*", ({ request }) => auth.handler(request))
   .use(logger())
   .use(swagger)
   .use(errorMiddleware)

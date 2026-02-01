@@ -3,7 +3,7 @@ import { auth } from "./auth";
 import { department } from "./department";
 import { role } from "./role";
 
-const modules = new Elysia({ prefix: "/api/v1" })
+const modules = new Elysia({ prefix: "/api" })
   .use(department)
   .use(role)
   .use(auth);

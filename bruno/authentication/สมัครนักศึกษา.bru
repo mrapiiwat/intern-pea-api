@@ -5,11 +5,29 @@ meta {
 }
 
 post {
-  url: {{url}}/sign-up/intern
-  body: none
+  url: {{url}}/auth/sign-up/intern
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "fname": "rif",
+    "lname": "lan",
+    "phoneNumber": "0886651ๅ44",
+    "email": "te6@test.com",
+    "password": "1212312121",
+    "gender": "MALE",
+    "institutionId": 1,
+    "facultyId": 1,
+    "major": "ce",
+    "totalHours": 100,
+    "startDate": "2025-07-14",
+    "endDate": "2025-09-10"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

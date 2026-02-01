@@ -18,4 +18,10 @@ export const RegisterInternBody = t.Object({
   endDate: t.Optional(t.String()),
 });
 
+export const LoginInternBody = t.Object({
+  phoneNumber: t.String({ minLength: 9, error: "เบอร์โทรศัพท์ไม่ถูกต้อง" }),
+  password: t.String({ minLength: 6, error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" }),
+});
+
 export type RegisterInternBodyType = typeof RegisterInternBody.static;
+export type LoginInternBodyType = typeof LoginInternBody.static;

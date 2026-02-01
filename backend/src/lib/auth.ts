@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { username } from "better-auth/plugins";
 import { eq, type InferSelectModel } from "drizzle-orm";
 import { db } from "@/db";
-import { username } from "better-auth/plugins";
 import * as schema from "@/db/schema";
 
 type User = InferSelectModel<typeof schema.users>;
@@ -18,14 +18,12 @@ export const auth = betterAuth({
     },
   }),
 
-  plugins: [
-    username()
-  ],
-
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
   },
+
+  plugins: [username()],
 
   user: {
     additionalFields: {
@@ -39,6 +37,7 @@ export const auth = betterAuth({
     fields: {
       name: "fname",
       image: undefined,
+      username: "phoneNumber",
       emailVerified: undefined,
     },
   },

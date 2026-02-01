@@ -5,14 +5,14 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/api/auth/sign-in/username
+  url: {{url}}/auth/sign-in/intern
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "username": "0886651690",
+    "phoneNumber": "0000000000",
     "password": "1212312121"
   }
 }
