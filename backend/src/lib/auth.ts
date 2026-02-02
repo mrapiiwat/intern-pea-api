@@ -33,6 +33,8 @@ export const auth = betterAuth({
       lname: { type: "string" },
       phoneNumber: { type: "string" },
       gender: { type: "string" },
+      username: { type: "string" },
+      displayUsername: { type: "string" },
     },
     fields: {
       name: "fname",

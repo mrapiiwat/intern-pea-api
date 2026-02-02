@@ -45,7 +45,7 @@ COMMENT ON TABLE public.institutions IS 'เก็บรายชื่อสถ
 
 CREATE TABLE public.faculties (
   id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -58,6 +58,7 @@ CREATE TABLE public.users (
   fname VARCHAR(100),
   lname VARCHAR(100),
   username VARCHAR(100) UNIQUE,
+  display_username TEXT,
   phone_number VARCHAR(20) UNIQUE,
   email VARCHAR(150) UNIQUE,
   gender public.gender_enum,

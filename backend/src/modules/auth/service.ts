@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { InternalServerError } from "@/common/exceptions";
+import { BadRequestError, InternalServerError } from "@/common/exceptions";
 import { db } from "@/db";
-import { studentProfiles, users } from "@/db/schema";
+import { accounts, sessions, studentProfiles, users } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import type * as model from "./model";
 
@@ -20,6 +20,8 @@ export class AuthService {
         gender: data.gender,
         roleId: ROLE_INTERN,
         departmentId: null,
+        username: data.phoneNumber,
+        displayUsername: `${data.fname} ${data.lname}`,
       },
     });
 
@@ -43,9 +45,20 @@ export class AuthService {
 
         return { success: true, message: "Registration successful" };
       });
-    } catch (_error) {
+    } catch (error: unknown) {
+      console.log(error);
+
+      await db
+        .delete(sessions)
+        .where(eq(sessions.userId, authResponse.user.id));
+
+      await db
+        .delete(accounts)
+        .where(eq(accounts.userId, authResponse.user.id));
+
       await db.delete(users).where(eq(users.id, authResponse.user.id));
-      throw new InternalServerError("FAILED_TO_CREATE_PROFILE");
+
+      throw new BadRequestError("FAILED_TO_CREATE_PROFILE");
     }
   }
 

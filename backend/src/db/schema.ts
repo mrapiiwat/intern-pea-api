@@ -88,6 +88,7 @@ export const users = pgTable(
     fname: varchar({ length: 100 }),
     lname: varchar({ length: 100 }),
     username: varchar({ length: 100 }),
+    displayUsername: text("display_username"),
     phoneNumber: varchar("phone_number", { length: 20 }),
     email: varchar({ length: 150 }),
     gender: genderEnum("gender"),
