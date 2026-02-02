@@ -1,5 +1,5 @@
 import Elysia from "elysia";
-import { UnauthorizedError } from "@/common/exceptions";
+import { ForbiddenError, UnauthorizedError } from "@/common/exceptions";
 import { auth } from "@/lib/auth";
 
 export const isAuthenticated = new Elysia({ name: "better-auth" })
@@ -23,4 +23,26 @@ export const isAuthenticated = new Elysia({ name: "better-auth" })
         };
       },
     },
+    role: (role: 1 | 2 | number) => ({
+      async resolve({ request: { headers } }) {
+        const session = await auth.api.getSession({
+          headers,
+        });
+
+        if (!session) {
+          throw new UnauthorizedError(
+            "Unauthorized: Session not found or expired"
+          );
+        }
+
+        if (session.user.roleId !== role) {
+          throw new ForbiddenError("Forbidden: You do not have permission");
+        }
+
+        return {
+          user: session.user,
+          session: session.session,
+        };
+      },
+    }),
   });

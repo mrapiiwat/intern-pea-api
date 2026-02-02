@@ -1,9 +1,5 @@
 import { eq } from "drizzle-orm";
-import {
-  BadRequestError,
-  ForbiddenError,
-  InternalServerError,
-} from "@/common/exceptions";
+import { BadRequestError, InternalServerError } from "@/common/exceptions";
 import { db } from "@/db";
 import { studentProfiles, users } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -74,29 +70,25 @@ export class AuthService {
   }
 
   async login(data: model.LoginInternBodyType) {
-    try {
-      const result = await auth.api.signInUsername({
-        body: {
-          username: data.phoneNumber,
-          password: data.password,
-        },
-      });
+    const response = await auth.api.signInUsername({
+      body: {
+        username: data.phoneNumber,
+        password: data.password,
+      },
+      asResponse: true,
+    });
 
-      if (!result?.user) {
-        throw new BadRequestError("Invalid phone number or password");
-      }
-
-      return {
-        success: true,
-        message: "Login successful",
-      };
-    } catch (error) {
-      if (error instanceof BadRequestError || error instanceof ForbiddenError) {
-        throw error;
-      }
-
-      throw new BadRequestError("Login failed. Please try again later");
+    if (!response) {
+      throw new InternalServerError(
+        "Login failed: No response from auth provider"
+      );
     }
+
+    if (!response.ok) {
+      throw new BadRequestError("Invalid phone number or password");
+    }
+
+    return response;
   }
 
   async logout(headers: Headers) {
