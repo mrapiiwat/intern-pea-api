@@ -8,7 +8,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Role"] })
   .get(
     "/",
     async ({ set }) => {
-      const response = roleService.findAll();
+      const response = await roleService.findAll();
 
       set.status = 200;
       return response;
@@ -20,10 +20,11 @@ export const role = new Elysia({ prefix: "/role", tags: ["Role"] })
       },
     }
   )
+
   .post(
     "/",
     async ({ body, set }) => {
-      const response = roleService.create(body);
+      const response = await roleService.create(body);
 
       set.status = 201;
       return response;
@@ -36,6 +37,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Role"] })
       },
     }
   )
+
   .put(
     "/:id",
     async ({ params: { id }, body, set }) => {
@@ -53,6 +55,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Role"] })
       },
     }
   )
+
   .delete(
     "/:id",
     async ({ params: { id }, set }) => {

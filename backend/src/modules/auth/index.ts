@@ -4,10 +4,7 @@ import { AuthService } from "./service";
 
 const authService = new AuthService();
 
-export const auth = new Elysia({
-  prefix: "/auth",
-  tags: ["Authentication"],
-})
+export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
   .post(
     "/sign-up/intern",
     async ({ body, set }) => {
@@ -20,6 +17,7 @@ export const auth = new Elysia({
       body: model.RegisterInternBody,
     }
   )
+
   .post(
     "/sign-in/intern",
     async ({ body, set }) => {
@@ -31,4 +29,11 @@ export const auth = new Elysia({
     {
       body: model.LoginInternBody,
     }
-  );
+  )
+
+  .post("/sign-out", async ({ request, set }) => {
+    const response = await authService.logout(request.headers);
+
+    set.status = 200;
+    return response;
+  });

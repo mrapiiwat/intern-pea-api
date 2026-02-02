@@ -8,7 +8,7 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
   .get(
     "/",
     async ({ query, set }) => {
-      const response = departmentService.findAll(query);
+      const response = await departmentService.findAll(query);
 
       set.status = 200;
       return response;
@@ -26,7 +26,7 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
   .post(
     "/",
     async ({ body, set }) => {
-      const response = departmentService.create(body);
+      const response = await departmentService.create(body);
 
       set.status = 201;
       return response;
@@ -43,7 +43,7 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
   .put(
     "/:id",
     async ({ params: { id }, body, set }) => {
-      const response = departmentService.update(id, body);
+      const response = await departmentService.update(id, body);
 
       set.status = 200;
       return response;
@@ -61,7 +61,7 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
   .delete(
     "/:id",
     async ({ params: { id }, set }) => {
-      const response = departmentService.delete(id);
+      const response = await departmentService.delete(id);
 
       set.status = 200;
       return response;

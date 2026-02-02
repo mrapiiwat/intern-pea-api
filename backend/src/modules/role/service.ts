@@ -36,7 +36,7 @@ export class RoleService {
         .update(roles)
         .set({
           ...data,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         })
         .where(eq(roles.id, id))
         .returning();

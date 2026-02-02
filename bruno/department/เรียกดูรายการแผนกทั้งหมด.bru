@@ -1,0 +1,20 @@
+meta {
+  name: เรียกดูรายการแผนกทั้งหมด
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/dept
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: Kw0qhk3CgUTBWO0zuIscpSvqJmh6PFO
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

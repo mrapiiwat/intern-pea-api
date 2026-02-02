@@ -1,7 +1,11 @@
 import { eq } from "drizzle-orm";
-import { BadRequestError, InternalServerError } from "@/common/exceptions";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+} from "@/common/exceptions";
 import { db } from "@/db";
-import { accounts, sessions, studentProfiles, users } from "@/db/schema";
+import { studentProfiles, users } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import type * as model from "./model";
 
@@ -13,7 +17,7 @@ export class AuthService {
       body: {
         email: data.email,
         password: data.password,
-        name: `${data.fname} ${data.lname}`,
+        name: data.fname,
         fname: data.fname,
         lname: data.lname,
         phoneNumber: data.phoneNumber,
@@ -26,54 +30,81 @@ export class AuthService {
     });
 
     if (!authResponse?.user) {
-      throw new InternalServerError("FAILED_TO_CREATE_USER");
+      throw new InternalServerError("Failed to create user account.");
     }
+
+    const userId = authResponse.user.id;
 
     try {
       return await db.transaction(async (tx) => {
         await tx.insert(studentProfiles).values({
-          userId: authResponse.user.id,
+          userId: userId,
           institutionId: data.institutionId,
           facultyId: data.facultyId,
           major: data.major,
-          hours: data.totalHours.toString(),
+          hours: String(data.totalHours),
           internshipStatus: "NONE",
           isActive: true,
           startDate: data.startDate || null,
           endDate: data.endDate || null,
         });
 
-        return { success: true, message: "Registration successful" };
+        return { success: true, message: "Intern registration successful" };
       });
-    } catch (error: unknown) {
-      console.log(error);
+    } catch (error) {
+      console.error(
+        "Profile creation failed. Rolling back user:",
+        userId,
+        error
+      );
 
-      await db
-        .delete(sessions)
-        .where(eq(sessions.userId, authResponse.user.id));
+      try {
+        await db.delete(users).where(eq(users.id, userId));
+      } catch (rollbackError) {
+        console.error(
+          `FATAL: Orphan user created! ID: ${userId}`,
+          rollbackError
+        );
+      }
 
-      await db
-        .delete(accounts)
-        .where(eq(accounts.userId, authResponse.user.id));
-
-      await db.delete(users).where(eq(users.id, authResponse.user.id));
-
-      throw new BadRequestError("FAILED_TO_CREATE_PROFILE");
+      throw new BadRequestError(
+        "Failed to create student profile. The account creation has been rolled back. Please verify your information and try again."
+      );
     }
   }
 
   async login(data: model.LoginInternBodyType) {
-    const response = await auth.api.signInUsername({
-      body: {
-        username: data.phoneNumber,
-        password: data.password,
-      },
+    try {
+      const result = await auth.api.signInUsername({
+        body: {
+          username: data.phoneNumber,
+          password: data.password,
+        },
+      });
+
+      if (!result?.user) {
+        throw new BadRequestError("Invalid phone number or password");
+      }
+
+      return {
+        success: true,
+        message: "Login successful",
+      };
+    } catch (error) {
+      if (error instanceof BadRequestError || error instanceof ForbiddenError) {
+        throw error;
+      }
+
+      throw new BadRequestError("Login failed. Please try again later");
+    }
+  }
+
+  async logout(headers: Headers) {
+    const response = await auth.api.signOut({
+      headers: headers,
+      asResponse: true,
     });
 
-    if (!response?.user) {
-      throw new InternalServerError("INVALID_CREDENTIALS");
-    }
-
-    return { token: response.token };
+    return response;
   }
 }

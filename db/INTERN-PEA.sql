@@ -76,7 +76,7 @@ CREATE TABLE public.staff_profiles (
   user_id VARCHAR(50) NOT NULL UNIQUE,
   employee_id VARCHAR(50) NOT NULL UNIQUE,
 
-  FOREIGN KEY (user_id) REFERENCES public.users(id)
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 COMMENT ON TABLE public.staff_profiles IS 'โปรไฟล์พี่เลี้ยง';
 
@@ -95,7 +95,7 @@ CREATE TABLE public.student_profiles (
   internship_status public.internship_status_enum NOT NULL,
   status_note TEXT,
 
-  FOREIGN KEY (user_id) REFERENCES public.users(id),
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
   FOREIGN KEY (institution_id) REFERENCES public.institutions(id),
   FOREIGN KEY (faculty_id) REFERENCES public.faculties(id)
 );
@@ -111,7 +111,7 @@ CREATE TABLE public.sessions (
   user_agent TEXT,
   user_id VARCHAR(50) NOT NULL,
 
-  FOREIGN KEY (user_id) REFERENCES public.users(id)
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE public.accounts (
@@ -129,7 +129,7 @@ CREATE TABLE public.accounts (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (user_id) REFERENCES public.users(id)
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE public.department_staff_roles (

@@ -1,12 +1,12 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { username } from "better-auth/plugins";
-import { eq, type InferSelectModel } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
-type User = InferSelectModel<typeof schema.users>;
-type Session = InferSelectModel<typeof schema.sessions>;
+type user = InferSelectModel<typeof schema.users>;
+type session = InferSelectModel<typeof schema.sessions>;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -33,8 +33,6 @@ export const auth = betterAuth({
       lname: { type: "string" },
       phoneNumber: { type: "string" },
       gender: { type: "string" },
-      username: { type: "string" },
-      displayUsername: { type: "string" },
     },
     fields: {
       name: "fname",
@@ -45,22 +43,16 @@ export const auth = betterAuth({
   },
 
   callbacks: {
-    session: async ({ session, user }: { session: Session; user: User }) => {
-      const profile = await db.query.studentProfiles.findFirst({
-        where: eq(schema.studentProfiles.userId, user.id),
-        columns: {
-          image: true,
-        },
-      });
-
+    session: async ({ session, user }: { session: session; user: user }) => {
       return {
         session,
-        user: {
-          ...user,
-          image: profile?.image || undefined,
-        },
+        user,
       };
     },
+  },
+
+  advanced: {
+    cookiePrefix: "better-auth",
   },
 
   baseURL: Bun.env.BETTER_AUTH_BASE_URL,

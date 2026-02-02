@@ -1,0 +1,32 @@
+meta {
+  name: เข้าสู่ระบบ (นักศึกษา)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/auth/sign-in/intern
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "phoneNumber": "0886651690",
+    "password": "1212312121"
+  }
+}
+
+script:post-response {
+  const data = res.getBody();
+  
+  if (data && data.token) {
+    bru.setVar("token", data.token);
+    console.log("เซ็ต Token เรียบร้อยแล้ว!");
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -66,7 +66,7 @@ export class DepartmentService {
         .update(departments)
         .set({
           ...data,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         })
         .where(eq(departments.id, id))
         .returning();
