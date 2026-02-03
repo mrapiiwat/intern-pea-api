@@ -8,7 +8,6 @@ import {
   applicationStatuses,
   checkTimes,
   dailyWorkLogs,
-  departmentStaffRoles,
   departments,
   docTypes,
   faculties,
@@ -57,7 +56,6 @@ export const rolesRelations = relations(roles, ({ many }) => ({
 
 export const departmentsRelations = relations(departments, ({ many }) => ({
   users: many(users),
-  departmentStaffRoles: many(departmentStaffRoles),
   internshipPositions: many(internshipPositions),
   applicationStatuses: many(applicationStatuses),
 }));
@@ -69,7 +67,6 @@ export const staffProfilesRelations = relations(
       fields: [staffProfiles.userId],
       references: [users.id],
     }),
-    departmentStaffRoles: many(departmentStaffRoles),
     applicationMentors: many(applicationMentors),
     dailyWorkLogs: many(dailyWorkLogs),
   })
@@ -114,20 +111,6 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
     references: [users.id],
   }),
 }));
-
-export const departmentStaffRolesRelations = relations(
-  departmentStaffRoles,
-  ({ one }) => ({
-    department: one(departments, {
-      fields: [departmentStaffRoles.departmentId],
-      references: [departments.id],
-    }),
-    staffProfile: one(staffProfiles, {
-      fields: [departmentStaffRoles.staffId],
-      references: [staffProfiles.id],
-    }),
-  })
-);
 
 export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
   user: one(users, {

@@ -277,37 +277,6 @@ export const accounts = pgTable(
   ]
 );
 
-export const departmentStaffRoles = pgTable(
-  "department_staff_roles",
-  {
-    id: serial().primaryKey().notNull(),
-    departmentId: integer("department_id").notNull(),
-    staffId: integer("staff_id").notNull(),
-    staffRole: staffRoleEnum("staff_role").notNull(),
-    isActive: boolean("is_active").default(true).notNull(),
-    assignedAt: timestamp("assigned_at", { mode: "string" }).notNull(),
-    deletedAt: timestamp("deleted_at", { mode: "string" }),
-    note: text(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.departmentId],
-      foreignColumns: [departments.id],
-      name: "department_staff_roles_department_id_fkey",
-    }),
-    foreignKey({
-      columns: [table.staffId],
-      foreignColumns: [staffProfiles.id],
-      name: "department_staff_roles_staff_id_fkey",
-    }),
-    unique("department_staff_roles_department_id_staff_id_staff_role_key").on(
-      table.staffRole,
-      table.staffId,
-      table.departmentId
-    ),
-  ]
-);
-
 export const adminLogs = pgTable(
   "admin_logs",
   {

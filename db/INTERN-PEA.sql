@@ -1,5 +1,4 @@
 CREATE TYPE public.internship_status_enum AS ENUM ('NONE', 'ACTIVE', 'COMPLETE', 'CANCEL');
-CREATE TYPE public.staff_role_enum AS ENUM ('OWNER', 'MENTOR', 'ADMIN');
 CREATE TYPE public.leave_request_enum AS ENUM ('ABSENCE', 'SICK');
 CREATE TYPE public.leave_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE public.recruitment_status_enum AS ENUM ('OPEN', 'CLOSE');
@@ -130,22 +129,6 @@ CREATE TABLE public.accounts (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE public.department_staff_roles (
-  id SERIAL PRIMARY KEY,
-  department_id INT NOT NULL,
-  staff_id INT NOT NULL,
-  staff_role public.staff_role_enum NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  assigned_at TIMESTAMP NOT NULL,
-  deleted_at TIMESTAMP, 
-  note TEXT,
-
-  UNIQUE (department_id, staff_id, staff_role),
-
-  FOREIGN KEY (department_id) REFERENCES public.departments(id),
-  FOREIGN KEY (staff_id) REFERENCES public.staff_profiles(id)
 );
 
 CREATE TABLE public.admin_logs (
