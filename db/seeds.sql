@@ -1,9 +1,13 @@
 INSERT INTO roles (name, description, created_at, updated_at)
-VALUES ('staff', 'เจ้าหน้าที่ดูแลระบบ (General Staff)', NOW(), NOW())
+VALUES ('admin', 'เจ้าหน้าที่ดูแลระบบ', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO roles (name, description, created_at, updated_at)
-VALUES ('intern', 'นักศึกษาฝึกงาน (Internship Student)', NOW(), NOW())
+VALUES ('owner', 'เจ้าหน้าที่ดูแลกอง, ผู้ประกาศรับสมัครฝึกงาน และ พี่เลี้ยง', NOW(), NOW())
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO roles (name, description, created_at, updated_at)
+VALUES ('student', 'นักศึกษาฝึกงาน', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO institutions (name, created_at, updated_at)
