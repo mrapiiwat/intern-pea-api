@@ -34,3 +34,10 @@ INSERT INTO faculties (name, created_at, updated_at)
 VALUES ('โรงเรียนธรรมมิสลาม', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
+INSERT INTO departments (name, location, latitude, longitude, created_at, updated_at)
+VALUES ('กอพ.1', 'สนญ.', 1.1, 1.2, NOW(), NOW())
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO departments (name, location, latitude, longitude, created_at, updated_at)
+VALUES ('กอพ.2', 'สนญ.', 1.4, 1.5, NOW(), NOW())
+ON CONFLICT (name) DO NOTHING;
