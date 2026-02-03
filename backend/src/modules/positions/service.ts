@@ -15,7 +15,8 @@ export class PositionService {
     if (!u) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
 
     if (!u.departmentId) {
-      throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)");
+      throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)"); 
+      // ตอนนี้ถ้าจะ test ให้ไปเพิ่มข้อมูลในตาราง department แล้วค่อยนำ departmentId จากที่สร้างมาใส่ให้ users
     }
 
     return u.departmentId;
