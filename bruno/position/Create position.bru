@@ -1,0 +1,32 @@
+meta {
+  name: Create position
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{url}}/position
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Backend Intern",
+    "location": "PEA HQ",
+    "positionCount": 2,
+    "major": "Computer Engineering",
+    "applyStart": "2026-02-03T00:00:00.000Z",
+    "applyEnd": "2026-03-01T00:00:00.000Z",
+    "jobDetails": "พัฒนา API ด้วย Go/Node",
+    "requirement": "รู้ REST, SQL",
+    "benefits": "มีพี่เลี้ยง",
+    "recruitmentStatus": "OPEN"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

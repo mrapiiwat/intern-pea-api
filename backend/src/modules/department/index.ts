@@ -1,10 +1,12 @@
 import { Elysia } from "elysia";
+import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { DepartmentService } from "./service";
 
 const departmentService = new DepartmentService();
 
 export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
+  .use(isAuthenticated)
   .get(
     "/",
     async ({ query, set }) => {
@@ -14,6 +16,7 @@ export const department = new Elysia({ prefix: "/dept", tags: ["Departments"] })
       return response;
     },
     {
+      auth: true,
       query: model.GetDepartmentsQuery,
       detail: {
         summary: "ค้นหาข้อมูลแผนก (Search Departments)",

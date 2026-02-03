@@ -6,6 +6,7 @@ CREATE TYPE public.recruitment_status_enum AS ENUM ('OPEN', 'CLOSE');
 CREATE TYPE public.app_status_enum AS ENUM ('PENDING_DOCUMENT', 'PENDING_INTERVIEW', 'PENDING_CONFIRMATION', 'ACCEPTED', 'COMPLETE');
 CREATE TYPE public.validation_status_enum AS ENUM ('INVALID', 'VERIFIED', 'REQUESTPENDING');
 CREATE TYPE public.gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
+CREATE TYPE public.institutions_types AS ENUM ('UNIVERSITY','VOCATIONAL','SCHOOL','OTHERS');
 
 CREATE TABLE public.roles (
   id SERIAL PRIMARY KEY,
@@ -37,6 +38,7 @@ COMMENT ON TABLE public.departments IS 'กองงาน';
 
 CREATE TABLE public.institutions (
   id SERIAL PRIMARY KEY,
+  institutions_type public.institutions_types,
   name VARCHAR(200) NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
