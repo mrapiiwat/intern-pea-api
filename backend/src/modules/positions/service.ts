@@ -6,24 +6,23 @@ import { internshipPositions, users } from "@/db/schema";
 import type * as model from "./model";
 
 export class PositionService {
-  private async getUserDepartmentId(actorUserId: string) {
-    const [u] = await db
+  private async getUserDepartmentId(userId: string) {
+    const [user] = await db
       .select({ id: users.id, departmentId: users.departmentId })
       .from(users)
-      .where(eq(users.id, actorUserId));
+      .where(eq(users.id, userId));
 
-    if (!u) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
+    if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
 
-    if (!u.departmentId) {
-      throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)"); 
-      // ตอนนี้ถ้าจะ test ให้ไปเพิ่มข้อมูลในตาราง department แล้วค่อยนำ departmentId จากที่สร้างมาใส่ให้ users
+    if (!user.departmentId) {
+      throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)");
     }
 
-    return u.departmentId;
+    return user.departmentId;
   }
 
-  async findAll(actorUserId: string, query: model.GetPositionsQueryType) {
-    const departmentId = await this.getUserDepartmentId(actorUserId);
+  async findAll(userId: string, query: model.GetPositionsQueryType) {
+    const departmentId = await this.getUserDepartmentId(userId);
 
     const { page = 1, limit = 20, search } = query;
     const offset = (page - 1) * limit;
@@ -53,10 +52,10 @@ export class PositionService {
     return { data, meta: { total, page, limit, totalPages, hasNextPage } };
   }
 
-  async create(actorUserId: string, data: model.CreatePositionBodyType) {
-    const departmentId = await this.getUserDepartmentId(actorUserId);
+  async create(userId: string, data: model.CreatePositionBodyType) {
+    const departmentId = await this.getUserDepartmentId(userId);
 
-    const [created] = await db
+    const [position] = await db
       .insert(internshipPositions)
       .values({
         departmentId,
@@ -64,10 +63,8 @@ export class PositionService {
         location: data.location ?? null,
         positionCount: data.positionCount ?? null,
         major: data.major ?? null,
-
         applyStart: data.applyStart ?? null,
         applyEnd: data.applyEnd ?? null,
-
         jobDetails: data.jobDetails ?? null,
         requirement: data.requirement ?? null,
         benefits: data.benefits ?? null,
@@ -75,15 +72,11 @@ export class PositionService {
       })
       .returning();
 
-    return created;
+    return position;
   }
 
-  async update(
-    actorUserId: string,
-    id: number,
-    data: model.UpdatePositionBodyType
-  ) {
-    const departmentId = await this.getUserDepartmentId(actorUserId);
+  async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
+    const departmentId = await this.getUserDepartmentId(userId);
 
     const [updated] = await db
       .update(internshipPositions)
@@ -106,8 +99,8 @@ export class PositionService {
     return updated;
   }
 
-  async delete(actorUserId: string, id: number) {
-    const departmentId = await this.getUserDepartmentId(actorUserId);
+  async delete(userId: string, id: number) {
+    const departmentId = await this.getUserDepartmentId(userId);
 
     const [deleted] = await db
       .delete(internshipPositions)

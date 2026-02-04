@@ -2,6 +2,14 @@ import Elysia from "elysia";
 import { ForbiddenError, UnauthorizedError } from "@/common/exceptions";
 import { auth } from "@/lib/auth";
 
+// export const ROLE_IDS = {
+//   STUDENT: 1,
+//   MENTOR: 2,
+//   ADMIN: 3,
+// } as const;
+
+// type role_value = (typeof ROLE_IDS)[keyof typeof ROLE_IDS];
+
 export const isAuthenticated = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
   .macro({
@@ -23,7 +31,7 @@ export const isAuthenticated = new Elysia({ name: "better-auth" })
         };
       },
     },
-    role: (role: 1 | 2 | number) => ({
+    role: (role: number | number[]) => ({
       async resolve({ request: { headers } }) {
         const session = await auth.api.getSession({
           headers,

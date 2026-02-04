@@ -18,7 +18,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       return response;
     },
     {
-      auth: true, // role: 1 หรือ 2,3,4--> ในการทำ permission
+      auth: true,
       query: model.GetPositionsQuery,
       detail: {
         summary: "ดูรายการตำแหน่ง (Owner scope)",
