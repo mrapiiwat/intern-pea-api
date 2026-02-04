@@ -1,0 +1,15 @@
+meta {
+  name: get student
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/user/student
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
