@@ -35,9 +35,9 @@ export class PositionService {
    * GET /position เห็นทั้งหมด (ทุก department)
    * - filter department ได้ ถ้า user ส่ง query มาเอง
    */
-  async findAll(userId: string, query: model.GetPositionsQueryType) {
-    await this.assertUserExists(userId);
-
+  // async findAll(userId: string, query: model.GetPositionsQueryType) { // ต้อง log-in ก่อนถึงจะเห็น positions
+  // await this.assertUserExists(userId);
+  async findAll(query: model.GetPositionsQueryType) {
     const { page = 1, limit = 10, search, department } = query;
     const offset = (page - 1) * limit;
 
@@ -83,6 +83,7 @@ export class PositionService {
    * POST /position ผูก departmentId จาก user.departmentId อัตโนมัติ
    */
   async create(userId: string, data: model.CreatePositionBodyType) {
+    await this.assertUserExists(userId);
     const departmentId = await this.getUserDepartmentId(userId);
 
     const [position] = await db
@@ -109,6 +110,7 @@ export class PositionService {
    * PUT /position/:id แก้ได้เฉพาะตำแหน่งใน department ของตัวเอง
    */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
+    await this.assertUserExists(userId);
     const departmentId = await this.getUserDepartmentId(userId);
 
     const [updated] = await db
@@ -136,6 +138,7 @@ export class PositionService {
    * DELETE /position/:id ลบได้เฉพาะตำแหน่งใน department ของตัวเอง
    */
   async delete(userId: string, id: number) {
+    await this.assertUserExists(userId);
     const departmentId = await this.getUserDepartmentId(userId);
 
     const [deleted] = await db

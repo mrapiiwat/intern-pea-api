@@ -11,14 +11,16 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
 
   .get(
     "/",
-    async ({ session, query, set }) => {
-      const response = await positionService.findAll(session.userId, query);
+    // async ({ session, query, set }) => { // ต้อง log-in ก่อนถึงจะเห็น positions
+    async ({ query, set }) => {
+      // const response = await positionService.findAll(session.userId, query); // ต้อง log-in ก่อนถึงจะเห็น positions
+      const response = await positionService.findAll(query);
 
       set.status = 200;
       return response;
     },
     {
-      auth: true,
+      // auth: true, // ต้อง log-in ก่อนถึงจะเห็น positions
       query: model.GetPositionsQuery,
       detail: {
         summary: "ดูรายการใบประกาศรับสมัครทั้งหมด",
