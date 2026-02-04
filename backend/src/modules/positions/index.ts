@@ -22,8 +22,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       query: model.GetPositionsQuery,
       detail: {
         summary: "ดูรายการใบประกาศรับสมัครทั้งหมด",
-        description:
-          "เรียกดูใบประกาศทั้งหมดในระบบ โดยทุก role มีสิทธิ์ในการเรียกดู",
+        description: "เรียกดูใบประกาศทั้งหมดในระบบ โดยทุก role มีสิทธิ์ในการเรียกดู",
       },
     }
   )

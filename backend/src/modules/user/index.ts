@@ -31,11 +31,15 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
       role: [1, 2],
     }
   )
-  .get("/student", async ({ set }) => {
-    const response = await userService.getStudent();
+  .get(
+    "/student",
+    async ({ set }) => {
+      const response = await userService.getStudent();
 
-    set.status = 200;
-    return response;
-  }, {
-    role: [1, 2]
-  })
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+    }
+  );
