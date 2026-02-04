@@ -10,7 +10,7 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
     "/profile",
     async ({ set, session }) => {
       const userId = session.userId;
-      const response = userService.me(userId);
+      const response = await userService.me(userId);
 
       set.status = 200;
       return response;
@@ -18,4 +18,24 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
     {
       auth: true,
     }
-  );
+  )
+  .get(
+    "/staff",
+    async ({ set }) => {
+      const response = await userService.getStaff();
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+    }
+  )
+  .get("/student", async ({ set }) => {
+    const response = await userService.getStudent();
+
+    set.status = 200;
+    return response;
+  }, {
+    role: [1, 2]
+  })
