@@ -2,13 +2,13 @@ import Elysia from "elysia";
 import { ForbiddenError, UnauthorizedError } from "@/common/exceptions";
 import { auth } from "@/lib/auth";
 
-// export const ROLE_IDS = {
-//   STUDENT: 1,
-//   MENTOR: 2,
-//   ADMIN: 3,
-// } as const;
+export const ROLE_IDS = {
+  STUDENT: 1,
+  MENTOR: 2,
+  ADMIN: 3,
+} as const;
 
-// type role_value = (typeof ROLE_IDS)[keyof typeof ROLE_IDS];
+type role_value = (typeof ROLE_IDS)[keyof typeof ROLE_IDS];
 
 export const isAuthenticated = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -31,7 +31,7 @@ export const isAuthenticated = new Elysia({ name: "better-auth" })
         };
       },
     },
-    role: (role: number | number[]) => ({
+    role: (roles: role_value | role_value[]) => ({
       async resolve({ request: { headers } }) {
         const session = await auth.api.getSession({
           headers,
@@ -43,7 +43,9 @@ export const isAuthenticated = new Elysia({ name: "better-auth" })
           );
         }
 
-        if (session.user.roleId !== role) {
+        const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
+        if (!allowedRoles.includes(session.user.roleId as role_value)) {
           throw new ForbiddenError("Forbidden: You do not have permission");
         }
 

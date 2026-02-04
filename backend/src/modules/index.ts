@@ -3,11 +3,13 @@ import { auth } from "./auth";
 import { department } from "./department";
 import { position } from "./positions";
 import { role } from "./role";
+import { user } from "./user";
 
 const modules = new Elysia({ prefix: "/api" })
   .use(department)
   .use(role)
   .use(auth)
-  .use(position);
+  .use(position)
+  .use(user);
 
 export default modules;
