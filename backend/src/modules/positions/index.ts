@@ -21,9 +21,9 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       auth: true,
       query: model.GetPositionsQuery,
       detail: {
-        summary: "ดูรายการตำแหน่ง (Owner scope)",
+        summary: "ดูรายการใบประกาศรับสมัครทั้งหมด",
         description:
-          "OWNER ดูตำแหน่งที่ประกาศของ Department ตัวเอง (search + pagination)",
+          "เรียกดูใบประกาศทั้งหมดในระบบ โดยทุก role มีสิทธิ์ในการเรียกดู",
       },
     }
   )
