@@ -5,7 +5,7 @@ import { studentProfiles, users } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import type * as model from "./model";
 
-const ROLE_INTERN = 2;
+const ROLE_INTERN = 3;
 
 export class AuthService {
   async registerIntern(data: model.RegisterInternBodyType) {
