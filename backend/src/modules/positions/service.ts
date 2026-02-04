@@ -24,7 +24,6 @@ export class PositionService {
 
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
 
-    // narrow ให้เป็น number แน่นอน (กัน number | null)
     if (user.departmentId === null) {
       throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)");
     }
