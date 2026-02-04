@@ -1,13 +1,17 @@
 meta {
-  name: Get positions
+  name: Get department's positions
   type: http
   seq: 4
 }
 
 get {
-  url: {{url}}/position
+  url: {{url}}/position?department=2
   body: none
   auth: inherit
+}
+
+params:query {
+  department: 2
 }
 
 settings {

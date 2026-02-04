@@ -1,4 +1,4 @@
-import { and, count, eq, ilike } from "drizzle-orm";
+import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -6,7 +6,17 @@ import { internshipPositions, users } from "@/db/schema";
 import type * as model from "./model";
 
 export class PositionService {
-  private async getUserDepartmentId(userId: string) {
+  private async assertUserExists(userId: string) {
+    // check user อยู่ในระบบไหม
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
+  }
+
+  private async getUserDepartmentId(userId: string): Promise<number> {
     const [user] = await db
       .select({ id: users.id, departmentId: users.departmentId })
       .from(users)
@@ -14,23 +24,41 @@ export class PositionService {
 
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
 
-    if (!user.departmentId) {
+    // narrow ให้เป็น number แน่นอน (กัน number | null)
+    if (user.departmentId === null) {
       throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)");
     }
 
     return user.departmentId;
   }
 
+  /**
+   * GET /position เห็นทั้งหมด (ทุก department)
+   * - filter department ได้ ถ้า user ส่ง query มาเอง
+   */
   async findAll(userId: string, query: model.GetPositionsQueryType) {
-    const departmentId = await this.getUserDepartmentId(userId);
+    await this.assertUserExists(userId);
 
-    const { page = 1, limit = 20, search } = query;
+    const { page = 1, limit = 10, search, department } = query;
     const offset = (page - 1) * limit;
 
-    const whereClause = and(
-      eq(internshipPositions.departmentId, departmentId),
-      search ? ilike(internshipPositions.name, `%${search}%`) : undefined
-    );
+    const filters: SQL[] = [];
+
+    if (department !== undefined) {
+      filters.push(eq(internshipPositions.departmentId, department));
+    }
+
+    if (search) {
+      const terms = search.split(" ").filter(Boolean);
+      if (terms.length > 0) {
+        const searchFilters = terms.map((w) =>
+          ilike(internshipPositions.name, `%${w}%`)
+        );
+        filters.push(or(...searchFilters)!);
+      }
+    }
+
+    const whereClause = filters.length > 0 ? and(...filters) : undefined;
 
     const data = await db
       .select()
@@ -52,6 +80,9 @@ export class PositionService {
     return { data, meta: { total, page, limit, totalPages, hasNextPage } };
   }
 
+  /**
+   * POST /position ผูก departmentId จาก user.departmentId อัตโนมัติ
+   */
   async create(userId: string, data: model.CreatePositionBodyType) {
     const departmentId = await this.getUserDepartmentId(userId);
 
@@ -75,6 +106,9 @@ export class PositionService {
     return position;
   }
 
+  /**
+   * PUT /position/:id แก้ได้เฉพาะตำแหน่งใน department ของตัวเอง
+   */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
     const departmentId = await this.getUserDepartmentId(userId);
 
@@ -99,6 +133,9 @@ export class PositionService {
     return updated;
   }
 
+  /**
+   * DELETE /position/:id ลบได้เฉพาะตำแหน่งใน department ของตัวเอง
+   */
   async delete(userId: string, id: number) {
     const departmentId = await this.getUserDepartmentId(userId);
 

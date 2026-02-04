@@ -2,8 +2,9 @@ import { t } from "elysia";
 
 export const GetPositionsQuery = t.Object({
   page: t.Optional(t.Numeric({ default: 1 })),
-  limit: t.Optional(t.Numeric({ default: 20 })),
+  limit: t.Optional(t.Numeric({ default: 10 })),
   search: t.Optional(t.String()),
+  department: t.Optional(t.Numeric()),
 });
 
 export const CreatePositionBody = t.Object({
@@ -11,8 +12,8 @@ export const CreatePositionBody = t.Object({
   location: t.Optional(t.String()),
   positionCount: t.Optional(t.Numeric()),
   major: t.Optional(t.String()),
-  applyStart: t.Optional(t.String()), // ISO string
-  applyEnd: t.Optional(t.String()), // ISO string
+  applyStart: t.Optional(t.String()),
+  applyEnd: t.Optional(t.String()),
   jobDetails: t.Optional(t.String()),
   requirement: t.Optional(t.String()),
   benefits: t.Optional(t.String()),

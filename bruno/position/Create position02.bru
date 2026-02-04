@@ -1,0 +1,32 @@
+meta {
+  name: Create position02
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{url}}/position
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "HE Intern",
+    "location": "PEA HQ",
+    "positionCount": 1,
+    "major": "Business Engineering",
+    "applyStart": "2026-02-03T00:00:00.000Z",
+    "applyEnd": "2026-03-01T00:00:00.000Z",
+    "jobDetails": "มีใจรักในการพูดคุยกับลูกค้า",
+    "requirement": "รู้พื้นฐานโครงสร้าง website",
+    "benefits": "มีพี่เลี้ยง",
+    "recruitmentStatus": "OPEN"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

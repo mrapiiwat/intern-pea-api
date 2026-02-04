@@ -1,11 +1,11 @@
 meta {
-  name: ออกจากระบบ
+  name: Get users
   type: http
-  seq: 4
+  seq: 1
 }
 
-post {
-  url: {{url}}/auth/sign-out
+get {
+  url: {{url}}/user/profile
   body: none
   auth: inherit
 }
