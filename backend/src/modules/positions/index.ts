@@ -36,7 +36,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       return response;
     },
     {
-      auth: true,
+      role: [1, 2],
       body: model.CreatePositionBody,
       detail: {
         summary: "สร้างประกาศตำแหน่งฝึกงาน",
@@ -55,7 +55,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       return response;
     },
     {
-      auth: true,
+      role: [1, 2],
       params: model.params,
       body: model.UpdatePositionBody,
       detail: {
@@ -74,7 +74,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       return response;
     },
     {
-      auth: true,
+      role: [1, 2],
       params: model.params,
       detail: {
         summary: "ลบประกาศตำแหน่ง",
