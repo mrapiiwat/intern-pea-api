@@ -18,13 +18,21 @@ export const CreatePositionBody = t.Object({
   requirement: t.Optional(t.String()),
   benefits: t.Optional(t.String()),
   recruitmentStatus: t.Union([t.Literal("OPEN"), t.Literal("CLOSE")]),
+  mentorStaffIds: t.Array(t.Numeric(), { minItems: 1 }),
 });
 
 export const params = t.Object({
   id: t.Numeric(),
 });
 
-export const UpdatePositionBody = t.Partial(CreatePositionBody);
+export const UpdatePositionBody = t.Partial(
+  t.Intersect([
+    t.Omit(CreatePositionBody, ["mentorStaffIds"]),
+    t.Object({
+      mentorStaffIds: t.Optional(t.Array(t.Numeric(), { minItems: 1 })),
+    }),
+  ])
+);
 
 export type GetPositionsQueryType = typeof GetPositionsQuery.static;
 export type CreatePositionBodyType = typeof CreatePositionBody.static;

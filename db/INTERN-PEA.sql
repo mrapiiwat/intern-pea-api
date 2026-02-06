@@ -203,6 +203,21 @@ CREATE TABLE public.internship_positions (
   FOREIGN KEY (department_id) REFERENCES public.departments(id)
 );
 
+CREATE TABLE public.internship_position_mentors (
+  id SERIAL PRIMARY KEY,
+  position_id INT NOT NULL,
+  mentor_staff_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE (position_id, mentor_staff_id),
+
+  CONSTRAINT internship_position_mentors_position_id_fkey
+    FOREIGN KEY (position_id) REFERENCES public.internship_positions(id) ON DELETE CASCADE,
+
+  CONSTRAINT internship_position_mentors_mentor_staff_id_fkey
+    FOREIGN KEY (mentor_staff_id) REFERENCES public.staff_profiles(id) ON DELETE CASCADE
+);
+
 CREATE TABLE public.favorites (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL,

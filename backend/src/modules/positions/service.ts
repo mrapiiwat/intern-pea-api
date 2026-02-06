@@ -2,12 +2,28 @@ import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
-import { internshipPositions, users } from "@/db/schema";
+import {
+  internshipPositionMentors,
+  internshipPositions,
+  staffProfiles,
+  users,
+} from "@/db/schema";
 import type * as model from "./model";
+
+type MentorDTO = {
+  // รูปแบบข้อมูล mentor ที่ส่งให้ API
+  staffId: number;
+  name: string;
+  email: string | null;
+  phoneNumber: string | null;
+};
+
+type PositionWithMentors = typeof internshipPositions.$inferSelect & {
+  mentors: MentorDTO[];
+};
 
 export class PositionService {
   private async assertUserExists(userId: string) {
-    // check user อยู่ในระบบไหม
     const [user] = await db
       .select({ id: users.id })
       .from(users)
@@ -23,7 +39,6 @@ export class PositionService {
       .where(eq(users.id, userId));
 
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
-
     if (user.departmentId === null) {
       throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)");
     }
@@ -32,11 +47,11 @@ export class PositionService {
   }
 
   /**
-   * GET /position เห็นทั้งหมด (ทุก department)
-   * - filter department ได้ ถ้า user ส่ง query มาเอง
+   * GET /position
+   * เห็นทุก department
+   * filter ได้ด้วย search และ department
+   * แสดง mentor (หลายคน)
    */
-  // async findAll(userId: string, query: model.GetPositionsQueryType) { // ต้อง log-in ก่อนถึงจะเห็น positions
-  // await this.assertUserExists(userId);
   async findAll(query: model.GetPositionsQueryType) {
     const { page = 1, limit = 10, search, department } = query;
     const offset = (page - 1) * limit;
@@ -57,11 +72,27 @@ export class PositionService {
       }
     }
 
-    const whereClause = filters.length > 0 ? and(...filters) : undefined;
+    const whereClause = filters.length ? and(...filters) : undefined;
 
-    const data = await db
-      .select()
+    const rows = await db
+      .select({
+        position: internshipPositions,
+        mentorStaffId: internshipPositionMentors.mentorStaffId,
+        mentorFname: users.fname,
+        mentorLname: users.lname,
+        mentorEmail: users.email,
+        mentorPhone: users.phoneNumber,
+      })
       .from(internshipPositions)
+      .leftJoin(
+        internshipPositionMentors,
+        eq(internshipPositionMentors.positionId, internshipPositions.id)
+      )
+      .leftJoin(
+        staffProfiles,
+        eq(staffProfiles.id, internshipPositionMentors.mentorStaffId)
+      )
+      .leftJoin(users, eq(users.id, staffProfiles.userId))
       .where(whereClause)
       .limit(limit)
       .offset(offset)
@@ -72,15 +103,43 @@ export class PositionService {
       .from(internshipPositions)
       .where(whereClause);
 
+    const map = new Map<number, PositionWithMentors>();
+
+    for (const r of rows) {
+      const id = r.position.id;
+
+      if (!map.has(id)) {
+        map.set(id, {
+          ...r.position,
+          mentors: [],
+        });
+      }
+
+      if (r.mentorStaffId) {
+        map.get(id)!.mentors.push({
+          staffId: r.mentorStaffId,
+          name: `${r.mentorFname ?? ""} ${r.mentorLname ?? ""}`.trim(),
+          email: r.mentorEmail,
+          phoneNumber: r.mentorPhone,
+        });
+      }
+    }
+
+    const data = Array.from(map.values());
     const total = totalResult.count;
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
 
-    return { data, meta: { total, page, limit, totalPages, hasNextPage } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages, hasNextPage },
+    };
   }
 
   /**
-   * POST /position ผูก departmentId จาก user.departmentId อัตโนมัติ
+   * POST /position
+   * ผูก departmentId จาก user
+   * ผูก mentor หลายคนได้
    */
   async create(userId: string, data: model.CreatePositionBodyType) {
     await this.assertUserExists(userId);
@@ -103,11 +162,22 @@ export class PositionService {
       })
       .returning();
 
+    if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
+      await db.insert(internshipPositionMentors).values(
+        data.mentorStaffIds.map((mentorStaffId) => ({
+          positionId: position.id,
+          mentorStaffId,
+        }))
+      );
+    }
+
     return position;
   }
 
   /**
-   * PUT /position/:id แก้ได้เฉพาะตำแหน่งใน department ของตัวเอง
+   * PUT /position/:id
+   * แก้ได้เฉพาะ position ใน department ของตัวเอง
+   * mentor set ใหม่ทั้งชุด
    */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
     await this.assertUserExists(userId);
@@ -131,11 +201,26 @@ export class PositionService {
 
     if (!updated) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
 
+    if (data.mentorStaffIds) {
+      await db
+        .delete(internshipPositionMentors)
+        .where(eq(internshipPositionMentors.positionId, id));
+
+      if (data.mentorStaffIds.length > 0) {
+        await db.insert(internshipPositionMentors).values(
+          data.mentorStaffIds.map((mentorStaffId) => ({
+            positionId: id,
+            mentorStaffId,
+          }))
+        );
+      }
+    }
+
     return updated;
   }
 
   /**
-   * DELETE /position/:id ลบได้เฉพาะตำแหน่งใน department ของตัวเอง
+   * DELETE /position/:id
    */
   async delete(userId: string, id: number) {
     await this.assertUserExists(userId);

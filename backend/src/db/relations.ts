@@ -13,6 +13,7 @@ import {
   faculties,
   favorites,
   institutions,
+  internshipPositionMentors,
   internshipPositions,
   leaveRequests,
   notifications,
@@ -69,6 +70,7 @@ export const staffProfilesRelations = relations(
     }),
     applicationMentors: many(applicationMentors),
     dailyWorkLogs: many(dailyWorkLogs),
+    internshipPositionMentors: many(internshipPositionMentors),
   })
 );
 
@@ -153,9 +155,24 @@ export const internshipPositionsRelations = relations(
       fields: [internshipPositions.departmentId],
       references: [departments.id],
     }),
-
+    mentors: many(internshipPositionMentors),
     favorites: many(favorites),
     applicationStatuses: many(applicationStatuses),
+  })
+);
+
+export const internshipPositionMentorsRelations = relations(
+  internshipPositionMentors,
+  ({ one }) => ({
+    position: one(internshipPositions, {
+      fields: [internshipPositionMentors.positionId],
+      references: [internshipPositions.id],
+    }),
+
+    mentorStaff: one(staffProfiles, {
+      fields: [internshipPositionMentors.mentorStaffId],
+      references: [staffProfiles.id],
+    }),
   })
 );
 

@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -397,6 +398,35 @@ export const internshipPositions = pgTable(
       columns: [table.departmentId],
       foreignColumns: [departments.id],
       name: "internship_positions_department_id_fkey",
+    }),
+  ]
+);
+
+export const internshipPositionMentors = pgTable(
+  "internship_position_mentors",
+  {
+    id: serial().primaryKey().notNull(),
+    positionId: integer("position_id").notNull(), // added
+    mentorStaffId: integer("mentor_staff_id").notNull(), // added
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(), // added
+  },
+  (table) => [
+    uniqueIndex(
+      "internship_position_mentors_position_id_mentor_staff_id_key"
+    ).on(table.positionId, table.mentorStaffId),
+
+    foreignKey({
+      columns: [table.positionId],
+      foreignColumns: [internshipPositions.id],
+      name: "internship_position_mentors_position_id_fkey",
+    }),
+
+    foreignKey({
+      columns: [table.mentorStaffId],
+      foreignColumns: [staffProfiles.id],
+      name: "internship_position_mentors_mentor_staff_id_fkey",
     }),
   ]
 );
