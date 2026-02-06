@@ -1,0 +1,19 @@
+meta {
+  name: get staff by department
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{url}}/user/staff?departmentId=1
+  body: none
+  auth: inherit
+}
+
+params:query {
+  departmentId: 1
+}
+
+settings {
+  encodeUrl: true
+}
