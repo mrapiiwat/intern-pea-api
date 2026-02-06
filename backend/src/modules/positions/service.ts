@@ -2,7 +2,7 @@ import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
-import { internshipPositions, users } from "@/db/schema";
+import { departments, internshipPositions, users } from "@/db/schema";
 import type * as model from "./model";
 
 export class PositionService {
@@ -59,13 +59,78 @@ export class PositionService {
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
 
-    const data = await db
+    const positions = await db
       .select()
       .from(internshipPositions)
       .where(whereClause)
       .limit(limit)
       .offset(offset)
       .orderBy(internshipPositions.id);
+
+    // Get unique department IDs
+    const departmentIds = [...new Set(positions.map((p) => p.departmentId))];
+
+    // Fetch owners (roleId = 2) for each department
+    const owners =
+      departmentIds.length > 0
+        ? await db
+            .select({
+              id: users.id,
+              departmentId: users.departmentId,
+              fname: users.fname,
+              lname: users.lname,
+              email: users.email,
+              phoneNumber: users.phoneNumber,
+            })
+            .from(users)
+            .where(
+              and(
+                eq(users.roleId, 2), // owner role
+                or(...departmentIds.map((dId) => eq(users.departmentId, dId)))
+              )
+            )
+        : [];
+
+    // Fetch department names
+    const departmentData =
+      departmentIds.length > 0
+        ? await db
+            .select({
+              id: departments.id,
+              name: departments.name,
+              location: departments.location,
+            })
+            .from(departments)
+            .where(or(...departmentIds.map((dId) => eq(departments.id, dId))))
+        : [];
+
+    // Map positions with owner and department info
+    const data = positions.map((position) => {
+      const owner = owners.find(
+        (o) => o.departmentId === position.departmentId
+      );
+      const dept = departmentData.find((d) => d.id === position.departmentId);
+
+      return {
+        ...position,
+        owner: owner
+          ? {
+              id: owner.id,
+              fname: owner.fname,
+              lname: owner.lname,
+              email: owner.email,
+              phoneNumber: owner.phoneNumber,
+            }
+          : null,
+        department: dept
+          ? {
+              id: dept.id,
+              name: dept.name,
+              location: dept.location,
+            }
+          : null,
+      };
+    });
 
     const [totalResult] = await db
       .select({ count: count() })
