@@ -7,6 +7,7 @@ import {
   internshipPositions,
   staffProfiles,
   users,
+  departments
 } from "@/db/schema";
 import type * as model from "./model";
 
@@ -52,89 +53,155 @@ export class PositionService {
    * filter ได้ด้วย search และ department
    * แสดง mentor (หลายคน)
    */
-  async findAll(query: model.GetPositionsQueryType) {
-    const { page = 1, limit = 10, search, department } = query;
-    const offset = (page - 1) * limit;
+async findAll(query: model.GetPositionsQueryType) {
+  const { page = 1, limit = 10, search, department } = query;
+  const offset = (page - 1) * limit;
 
-    const filters: SQL[] = [];
+  const filters: SQL[] = [];
 
-    if (department !== undefined) {
-      filters.push(eq(internshipPositions.departmentId, department));
+  if (department !== undefined) {
+    filters.push(eq(internshipPositions.departmentId, department));
+  }
+
+  if (search) {
+    const terms = search.split(" ").filter(Boolean);
+    if (terms.length > 0) {
+      const searchFilters = terms.map((w) =>
+        ilike(internshipPositions.name, `%${w}%`)
+      );
+      filters.push(or(...searchFilters)!);
+    }
+  }
+
+  const whereClause = filters.length ? and(...filters) : undefined;
+
+  const rows = await db
+    .select({
+      position: internshipPositions,
+      mentorStaffId: internshipPositionMentors.mentorStaffId,
+      mentorFname: users.fname,
+      mentorLname: users.lname,
+      mentorEmail: users.email,
+      mentorPhone: users.phoneNumber,
+    })
+    .from(internshipPositions)
+    .leftJoin(
+      internshipPositionMentors,
+      eq(internshipPositionMentors.positionId, internshipPositions.id)
+    )
+    .leftJoin(
+      staffProfiles,
+      eq(staffProfiles.id, internshipPositionMentors.mentorStaffId)
+    )
+    .leftJoin(users, eq(users.id, staffProfiles.userId))
+    .where(whereClause)
+    .limit(limit)
+    .offset(offset)
+    .orderBy(internshipPositions.id);
+
+  // รวม mentors ให้เป็นตำแหน่งละก้อน
+  const map = new Map<number, PositionWithMentors>();
+
+  for (const r of rows) {
+    const id = r.position.id;
+
+    if (!map.has(id)) {
+      map.set(id, {
+        ...r.position,
+        mentors: [],
+      });
     }
 
-    if (search) {
-      const terms = search.split(" ").filter(Boolean);
-      if (terms.length > 0) {
-        const searchFilters = terms.map((w) =>
-          ilike(internshipPositions.name, `%${w}%`)
-        );
-        filters.push(or(...searchFilters)!);
-      }
+    if (r.mentorStaffId) {
+      map.get(id)!.mentors.push({
+        staffId: r.mentorStaffId,
+        name: `${r.mentorFname ?? ""} ${r.mentorLname ?? ""}`.trim(),
+        email: r.mentorEmail,
+        phoneNumber: r.mentorPhone,
+      });
     }
+  }
 
-    const whereClause = filters.length ? and(...filters) : undefined;
+  const positions = Array.from(map.values());
 
-    const rows = await db
-      .select({
-        position: internshipPositions,
-        mentorStaffId: internshipPositionMentors.mentorStaffId,
-        mentorFname: users.fname,
-        mentorLname: users.lname,
-        mentorEmail: users.email,
-        mentorPhone: users.phoneNumber,
-      })
-      .from(internshipPositions)
-      .leftJoin(
-        internshipPositionMentors,
-        eq(internshipPositionMentors.positionId, internshipPositions.id)
-      )
-      .leftJoin(
-        staffProfiles,
-        eq(staffProfiles.id, internshipPositionMentors.mentorStaffId)
-      )
-      .leftJoin(users, eq(users.id, staffProfiles.userId))
-      .where(whereClause)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(internshipPositions.id);
+  // ดึง departmentIds จาก positions (มี departmentId แน่นอน)
+  const departmentIds = [...new Set(positions.map((p) => p.departmentId))];
 
-    const [totalResult] = await db
-      .select({ count: count() })
-      .from(internshipPositions)
-      .where(whereClause);
+  // owners (roleId = 2) ของแต่ละ department
+  const owners =
+    departmentIds.length > 0
+      ? await db
+          .select({
+            id: users.id,
+            departmentId: users.departmentId,
+            fname: users.fname,
+            lname: users.lname,
+            email: users.email,
+            phoneNumber: users.phoneNumber,
+          })
+          .from(users)
+          .where(
+            and(
+              eq(users.roleId, 2),
+              or(...departmentIds.map((dId) => eq(users.departmentId, dId)))
+            )
+          )
+      : [];
 
-    const map = new Map<number, PositionWithMentors>();
+  // department info
+  const departmentData =
+    departmentIds.length > 0
+      ? await db
+          .select({
+            id: departments.id,
+            name: departments.name,
+            location: departments.location,
+          })
+          .from(departments)
+          .where(or(...departmentIds.map((dId) => eq(departments.id, dId))))
+      : [];
 
-    for (const r of rows) {
-      const id = r.position.id;
-
-      if (!map.has(id)) {
-        map.set(id, {
-          ...r.position,
-          mentors: [],
-        });
-      }
-
-      if (r.mentorStaffId) {
-        map.get(id)!.mentors.push({
-          staffId: r.mentorStaffId,
-          name: `${r.mentorFname ?? ""} ${r.mentorLname ?? ""}`.trim(),
-          email: r.mentorEmail,
-          phoneNumber: r.mentorPhone,
-        });
-      }
-    }
-
-    const data = Array.from(map.values());
-    const total = totalResult.count;
-    const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
+  // enrich ใส่ owner/department
+  const enriched = positions.map((position) => {
+    const owner = owners.find((o) => o.departmentId === position.departmentId);
+    const dept = departmentData.find((d) => d.id === position.departmentId);
 
     return {
-      data,
-      meta: { total, page, limit, totalPages, hasNextPage },
+      ...position,
+      owner: owner
+        ? {
+            id: owner.id,
+            fname: owner.fname,
+            lname: owner.lname,
+            email: owner.email,
+            phoneNumber: owner.phoneNumber,
+          }
+        : null,
+      department: dept
+        ? {
+            id: dept.id,
+            name: dept.name,
+            location: dept.location,
+          }
+        : null,
     };
-  }
+  });
+
+  const [totalResult] = await db
+    .select({ count: count() })
+    .from(internshipPositions)
+    .where(whereClause);
+
+  const total = Number(totalResult.count); // กัน count เป็น string/bigint
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+
+  return {
+    data: enriched,
+    meta: { total, page, limit, totalPages, hasNextPage },
+  };
+}
+
 
   /**
    * POST /position
