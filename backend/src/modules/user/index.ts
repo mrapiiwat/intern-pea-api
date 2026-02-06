@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import { UserService } from "./service";
 
@@ -21,14 +21,20 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
   )
   .get(
     "/staff",
-    async ({ set }) => {
-      const response = await userService.getStaff();
+    async ({ set, query }) => {
+      const departmentId = query.departmentId
+        ? Number(query.departmentId)
+        : undefined;
+      const response = await userService.getStaff(departmentId);
 
       set.status = 200;
       return response;
     },
     {
       role: [1, 2],
+      query: t.Object({
+        departmentId: t.Optional(t.Numeric()),
+      }),
     }
   )
   .get(
