@@ -23,6 +23,24 @@ type PositionWithMentors = typeof internshipPositions.$inferSelect & {
   mentors: MentorDTO[];
 };
 
+type OwnerDTO = {
+  fname: string | null;
+  lname: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+};
+
+type DepartmentDTO = {
+  id: number;
+  name: string;
+  location: string | null;
+};
+
+type EnrichedPosition = PositionWithMentors & {
+  owners: OwnerDTO[];
+  department: DepartmentDTO | null;
+};
+
 export class PositionService {
   private async assertUserExists(userId: string) {
     const [user] = await db
@@ -132,7 +150,6 @@ export class PositionService {
       departmentIds.length > 0
         ? await db
             .select({
-              id: users.id,
               departmentId: users.departmentId,
               fname: users.fname,
               lname: users.lname,
@@ -161,29 +178,33 @@ export class PositionService {
             .where(or(...departmentIds.map((dId) => eq(departments.id, dId))))
         : [];
 
+    const ownersByDept = new Map<number, OwnerDTO[]>();
+    for (const o of owners) {
+      const deptId = o.departmentId;
+      if (deptId === null) continue;
+
+      const list = ownersByDept.get(deptId) ?? [];
+      list.push({
+        fname: o.fname ?? null,
+        lname: o.lname ?? null,
+        email: o.email ?? null,
+        phoneNumber: o.phoneNumber ?? null,
+      });
+      ownersByDept.set(deptId, list);
+    }
+
     // enrich ใส่ owner/department
-    const enriched = positions.map((position) => {
-      const owner = owners.find(
-        (o) => o.departmentId === position.departmentId
-      );
+    const enriched: EnrichedPosition[] = positions.map((position) => {
       const dept = departmentData.find((d) => d.id === position.departmentId);
 
       return {
         ...position,
-        owner: owner
-          ? {
-              id: owner.id,
-              fname: owner.fname,
-              lname: owner.lname,
-              email: owner.email,
-              phoneNumber: owner.phoneNumber,
-            }
-          : null,
+        owners: ownersByDept.get(position.departmentId) ?? [],
         department: dept
           ? {
               id: dept.id,
               name: dept.name,
-              location: dept.location,
+              location: dept.location ?? null,
             }
           : null,
       };
@@ -223,6 +244,8 @@ export class PositionService {
         major: data.major ?? null,
         applyStart: data.applyStart ?? null,
         applyEnd: data.applyEnd ?? null,
+        resumeRq: data.resumeRq ?? false,
+        portfolioRq: data.portfolioRq ?? false,
         jobDetails: data.jobDetails ?? null,
         requirement: data.requirement ?? null,
         benefits: data.benefits ?? null,

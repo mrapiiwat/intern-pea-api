@@ -382,6 +382,8 @@ export const internshipPositions = pgTable(
     major: varchar("major", { length: 255 }),
     applyStart: timestamp("apply_start", { mode: "string" }),
     applyEnd: timestamp("apply_end", { mode: "string" }),
+    resumeRq: boolean("resume_rq").notNull().default(false),
+    portfolioRq: boolean("portfolio_rq").notNull().default(false),
     jobDetails: text("job_details"),
     requirement: text(),
     benefits: text(),

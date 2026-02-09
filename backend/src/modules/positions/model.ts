@@ -14,6 +14,8 @@ export const CreatePositionBody = t.Object({
   major: t.Optional(t.String()),
   applyStart: t.Optional(t.String()),
   applyEnd: t.Optional(t.String()),
+  resumeRq: t.Optional(t.Boolean()),
+  portfolioRq: t.Optional(t.Boolean()),
   jobDetails: t.Optional(t.String()),
   requirement: t.Optional(t.String()),
   benefits: t.Optional(t.String()),

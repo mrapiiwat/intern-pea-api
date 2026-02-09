@@ -193,6 +193,8 @@ CREATE TABLE public.internship_positions (
   major VARCHAR(255),
   apply_start TIMESTAMP,
   apply_end TIMESTAMP,
+  resume_rq BOOLEAN NOT NULL DEFAULT FALSE,
+  portfolio_rq BOOLEAN NOT NULL DEFAULT FALSE,
   job_details TEXT,
   requirement TEXT,
   benefits TEXT,

@@ -37,7 +37,10 @@ export class UserService {
   async getStaff(departmentId?: number) {
     const staffUsers = await db.query.users.findMany({
       where: departmentId
-        ? and(eq(users.roleId, ROLE_STAFF), eq(users.departmentId, departmentId))
+        ? and(
+            eq(users.roleId, ROLE_STAFF),
+            eq(users.departmentId, departmentId)
+          )
         : eq(users.roleId, ROLE_STAFF),
       with: {
         staffProfiles: true,
@@ -48,7 +51,9 @@ export class UserService {
     // staffProfiles is array (one-to-many), get first element
     return staffUsers.map((user) => {
       const { staffProfiles, ...userData } = user;
-      const profile = Array.isArray(staffProfiles) ? staffProfiles[0] : staffProfiles;
+      const profile = Array.isArray(staffProfiles)
+        ? staffProfiles[0]
+        : staffProfiles;
       return {
         ...userData,
         staffProfileId: profile?.id || null,
