@@ -111,7 +111,8 @@ export class UserService {
     if (data.hours !== undefined) updateData.hours = String(data.hours);
     if (data.faculty !== undefined) updateData.faculty = data.faculty;
     if (data.major !== undefined) updateData.major = data.major;
-    if (data.studentNote !== undefined) updateData.studentNote = data.studentNote;
+    if (data.studentNote !== undefined)
+      updateData.studentNote = data.studentNote;
     if (data.startDate !== undefined) updateData.startDate = data.startDate;
     if (data.endDate !== undefined) updateData.endDate = data.endDate;
 

@@ -5,11 +5,17 @@ meta {
 }
 
 get {
-  url: {{url}}/institution
+  url: {{url}}/institution?page=2&limit=20
   body: none
   auth: inherit
 }
 
+params:query {
+  page: 2
+  limit: 20
+}
+
 settings {
   encodeUrl: true
+  timeout: 0
 }
