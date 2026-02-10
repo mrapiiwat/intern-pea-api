@@ -13,6 +13,7 @@ export const RegisterInternBody = t.Object({
   institutionId: t.Numeric({ error: "กรุณาระบุรหัสสถาบัน" }),
   faculty: t.Optional(t.String()),
   major: t.Optional(t.String()),
+  studentNote: t.Optional(t.String()),
   totalHours: t.Numeric({ error: "กรุณาระบุจำนวนชั่วโมงฝึกงาน" }),
   startDate: t.Optional(t.String()),
   endDate: t.Optional(t.String()),

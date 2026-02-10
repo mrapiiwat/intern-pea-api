@@ -38,6 +38,7 @@ export class AuthService {
           institutionId: data.institutionId,
           faculty: data.faculty ?? null,
           major: data.major,
+          studentNote: data.studentNote ?? null,
           hours: String(data.totalHours),
           internshipStatus: "NONE",
           isActive: true,

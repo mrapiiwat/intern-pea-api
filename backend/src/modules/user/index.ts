@@ -83,6 +83,7 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
         hours: t.Optional(t.Number()),
         faculty: t.Optional(t.String()),
         major: t.Optional(t.String()),
+        studentNote: t.Optional(t.String()),
         startDate: t.Optional(t.String()),
         endDate: t.Optional(t.String()),
       }),
