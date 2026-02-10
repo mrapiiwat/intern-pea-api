@@ -1,0 +1,20 @@
+meta {
+  name: Post favorite
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/favorite
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { "positionId": 1 }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
