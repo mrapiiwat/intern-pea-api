@@ -39,7 +39,7 @@ export const institution = new Elysia({
       return response;
     },
     {
-      auth: true,
+      role: [1],
       body: model.CreateInstitutionBody,
       detail: {
         summary: "สร้างสถาบันใหม่ (Create Institution)",
