@@ -1,0 +1,23 @@
+meta {
+  name: Create institution
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/institution
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "institutionsType": "UNIVERSITY",
+    "name": "DPU"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

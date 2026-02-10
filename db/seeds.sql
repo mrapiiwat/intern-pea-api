@@ -10,32 +10,12 @@ INSERT INTO roles (name, description, created_at, updated_at)
 VALUES ('student', 'นักศึกษาฝึกงาน', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO institutions (name, created_at, updated_at)
-VALUES ('university', NOW(), NOW())
+INSERT INTO institutions (institutions_type, name, created_at, updated_at)
+VALUES ('UNIVERSITY','DPU', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO institutions (name, created_at, updated_at)
-VALUES ('school', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO faculties (name, created_at, updated_at)
-VALUES ('มหาวิทยาลัยธุรกิจบัณฑิตย์', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO faculties (name, created_at, updated_at)
-VALUES ('มหาวิทยาลัยเกษตรศาสตร์', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO faculties (name, created_at, updated_at)
-VALUES ('มหาวิทยาลัยศรีปทุม', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO faculties (name, created_at, updated_at)
-VALUES ('โรงเรียนท่าอิฐศึกษา', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO faculties (name, created_at, updated_at)
-VALUES ('โรงเรียนธรรมมิสลาม', NOW(), NOW())
+INSERT INTO institutions (institutions_type, name, created_at, updated_at)
+VALUES ('SCHOOL','โรงเรียนวัดบ้านหลวง', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO departments (name, location, latitude, longitude, created_at, updated_at)

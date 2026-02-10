@@ -1,0 +1,15 @@
+meta {
+  name: Get institution
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/institution
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

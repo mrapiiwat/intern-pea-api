@@ -44,13 +44,13 @@ CREATE TABLE public.institutions (
 );
 COMMENT ON TABLE public.institutions IS 'เก็บรายชื่อสถาบัน';
 
-CREATE TABLE public.faculties (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-COMMENT ON TABLE public.faculties IS 'คณะ';
+-- CREATE TABLE public.faculties (
+--   id SERIAL PRIMARY KEY,
+--   name TEXT NOT NULL UNIQUE,
+--   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- );
+-- COMMENT ON TABLE public.faculties IS 'คณะ';
 
 CREATE TABLE public.users (
   id VARCHAR(50) PRIMARY KEY,
@@ -87,18 +87,17 @@ CREATE TABLE public.student_profiles (
   image VARCHAR(255) UNIQUE,
   hours DECIMAL(10,2),
   institution_id INT NOT NULL,
-  faculty_id INT,
-  major  VARCHAR,
+  faculty VARCHAR,
+  major VARCHAR,
   start_date TIMESTAMP,
   end_date TIMESTAMP,
   is_active BOOLEAN,
   student_note TEXT,
   internship_status public.internship_status_enum NOT NULL,
   status_note TEXT,
-
+  
   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
-  FOREIGN KEY (institution_id) REFERENCES public.institutions(id),
-  FOREIGN KEY (faculty_id) REFERENCES public.faculties(id)
+  FOREIGN KEY (institution_id) REFERENCES public.institutions(id)
 );
 COMMENT ON TABLE public.student_profiles IS 'ข้อมูลเฉพาะนักศึกษา';
 

@@ -53,6 +53,13 @@ export const validationStatusEnum = pgEnum("validation_status_enum", [
 ]);
 export const genderEnum = pgEnum("gender_enum", ["MALE", "FEMALE", "OTHER"]);
 
+export const institutionsTypesEnum = pgEnum("institutions_types", [
+  "UNIVERSITY",
+  "VOCATIONAL",
+  "SCHOOL",
+  "OTHERS",
+]);
+
 export const docTypes = pgTable(
   "doc_types",
   {
@@ -136,20 +143,17 @@ export const departments = pgTable(
   (table) => [unique("departments_name_key").on(table.name)]
 );
 
-export const institutions = pgTable(
-  "institutions",
-  {
-    id: serial().primaryKey().notNull(),
-    name: varchar({ length: 200 }).notNull(),
-    createdAt: timestamp("created_at", { mode: "date" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "date" })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => [unique("institutions_name_key").on(table.name)]
-);
+export const institutions = pgTable("institutions", {
+  id: serial("id").primaryKey().notNull(),
+  institutionsType: institutionsTypesEnum("institutions_type"),
+  name: varchar("name", { length: 200 }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
 
 export const staffProfiles = pgTable(
   "staff_profiles",
@@ -172,13 +176,15 @@ export const staffProfiles = pgTable(
 export const studentProfiles = pgTable(
   "student_profiles",
   {
-    id: serial().primaryKey().notNull(),
-    userId: varchar("user_id", { length: 50 }).notNull(),
-    image: varchar({ length: 255 }),
-    hours: numeric({ precision: 10, scale: 2 }),
+    id: serial("id").primaryKey().notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull().unique(),
+    image: varchar("image", { length: 255 }).unique(),
+    hours: numeric("hours", { precision: 10, scale: 2 }),
     institutionId: integer("institution_id").notNull(),
-    facultyId: integer("faculty_id"),
-    major: varchar("major", { length: 255 }),
+
+    faculty: varchar("faculty"), // เปลี่ยนจาก facultyId
+    major: varchar("major"),
+
     startDate: timestamp("start_date", { mode: "string" }),
     endDate: timestamp("end_date", { mode: "string" }),
     isActive: boolean("is_active"),
@@ -191,19 +197,12 @@ export const studentProfiles = pgTable(
       columns: [table.userId],
       foreignColumns: [users.id],
       name: "student_profiles_user_id_fkey",
-    }),
+    }).onDelete("cascade"),
     foreignKey({
       columns: [table.institutionId],
       foreignColumns: [institutions.id],
       name: "student_profiles_institution_id_fkey",
     }),
-    foreignKey({
-      columns: [table.facultyId],
-      foreignColumns: [faculties.id],
-      name: "student_profiles_faculty_id_fkey",
-    }),
-    unique("student_profiles_user_id_key").on(table.userId),
-    unique("student_profiles_picture_key").on(table.image),
   ]
 );
 

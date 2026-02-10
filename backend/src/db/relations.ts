@@ -10,7 +10,6 @@ import {
   dailyWorkLogs,
   departments,
   docTypes,
-  faculties,
   favorites,
   institutions,
   internshipPositionMentors,
@@ -85,18 +84,10 @@ export const studentProfilesRelations = relations(
       fields: [studentProfiles.institutionId],
       references: [institutions.id],
     }),
-    faculty: one(faculties, {
-      fields: [studentProfiles.facultyId],
-      references: [faculties.id],
-    }),
   })
 );
 
 export const institutionsRelations = relations(institutions, ({ many }) => ({
-  studentProfiles: many(studentProfiles),
-}));
-
-export const facultiesRelations = relations(faculties, ({ many }) => ({
   studentProfiles: many(studentProfiles),
 }));
 
