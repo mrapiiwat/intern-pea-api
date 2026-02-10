@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { users, studentProfiles } from "@/db/schema";
+import { studentProfiles, users } from "@/db/schema";
 
 const ROLE_STAFF = 2;
 const ROLE_INTERN = 3;
@@ -69,13 +69,19 @@ export class UserService {
 
   async updateUser(
     userId: string,
-    data: { fname?: string; lname?: string; email?: string; phoneNumber?: string }
+    data: {
+      fname?: string;
+      lname?: string;
+      email?: string;
+      phoneNumber?: string;
+    }
   ) {
     const updateData: Record<string, unknown> = {};
     if (data.fname !== undefined) updateData.fname = data.fname;
     if (data.lname !== undefined) updateData.lname = data.lname;
     if (data.email !== undefined) updateData.email = data.email;
-    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+    if (data.phoneNumber !== undefined)
+      updateData.phoneNumber = data.phoneNumber;
 
     const [updated] = await db
       .update(users)
