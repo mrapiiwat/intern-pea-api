@@ -11,6 +11,7 @@ async function main() {
     UPDATE institutions
     SET institutions_type = 'UNIVERSITY'
     WHERE name LIKE 'มหาวิทยาลัย%'
+      OR name LIKE 'สถาบัน%'
   `);
 
   console.log("UNIVERSITY updated");
@@ -28,7 +29,7 @@ async function main() {
   await db.execute(sql`
     UPDATE institutions
     SET institutions_type = 'SCHOOL'
-    WHERE name LIKE 'โรงเรียน%'
+    WHERE name LIKE 'โรงเรียน%' 
   `);
 
   console.log("SCHOOL updated");
