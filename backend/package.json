@@ -22,7 +22,8 @@
     "drizzle-orm": "^0.45.1",
     "elysia": "latest",
     "elysia-logger": "^0.5.2",
-    "postgres": "^3.4.8"
+    "postgres": "^3.4.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.13",
