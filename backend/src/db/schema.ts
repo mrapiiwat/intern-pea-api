@@ -182,7 +182,7 @@ export const studentProfiles = pgTable(
     hours: numeric("hours", { precision: 10, scale: 2 }),
     institutionId: integer("institution_id").notNull(),
 
-    faculty: varchar("faculty"), // เปลี่ยนจาก facultyId
+    faculty: varchar("faculty"),
     major: varchar("major"),
 
     startDate: timestamp("start_date", { mode: "string" }),

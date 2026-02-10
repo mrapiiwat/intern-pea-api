@@ -11,7 +11,7 @@ export const RegisterInternBody = t.Object({
     { error: "เพศต้องเป็น MALE, FEMALE หรือ OTHER เท่านั้น" }
   ),
   institutionId: t.Numeric({ error: "กรุณาระบุรหัสสถาบัน" }),
-  facultyId: t.Optional(t.Numeric()),
+  faculty: t.Optional(t.String()),
   major: t.Optional(t.String()),
   totalHours: t.Numeric({ error: "กรุณาระบุจำนวนชั่วโมงฝึกงาน" }),
   startDate: t.Optional(t.String()),

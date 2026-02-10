@@ -36,7 +36,7 @@ export class AuthService {
         await tx.insert(studentProfiles).values({
           userId: userId,
           institutionId: data.institutionId,
-          facultyId: data.facultyId,
+          faculty: data.faculty ?? null,
           major: data.major,
           hours: String(data.totalHours),
           internshipStatus: "NONE",
