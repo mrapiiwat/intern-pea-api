@@ -48,4 +48,43 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
     {
       role: [1, 2],
     }
+  )
+  .put(
+    "/update",
+    async ({ body, set, session }) => {
+      const userId = session.userId;
+      const response = await userService.updateUser(userId, body);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      auth: true,
+      body: t.Object({
+        fname: t.Optional(t.String()),
+        lname: t.Optional(t.String()),
+        email: t.Optional(t.String()),
+        phoneNumber: t.Optional(t.String()),
+      }),
+    }
+  )
+  .put(
+    "/student-profile",
+    async ({ body, set, session }) => {
+      const userId = session.userId;
+      const response = await userService.updateStudentProfile(userId, body);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      auth: true,
+      body: t.Object({
+        hours: t.Optional(t.Number()),
+        faculty: t.Optional(t.String()),
+        major: t.Optional(t.String()),
+        startDate: t.Optional(t.String()),
+        endDate: t.Optional(t.String()),
+      }),
+    }
   );

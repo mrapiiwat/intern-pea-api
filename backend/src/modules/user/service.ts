@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, studentProfiles } from "@/db/schema";
 
 const ROLE_STAFF = 2;
 const ROLE_INTERN = 3;
@@ -65,5 +65,58 @@ export class UserService {
     return db.query.users.findMany({
       where: eq(users.roleId, ROLE_INTERN),
     });
+  }
+
+  async updateUser(
+    userId: string,
+    data: { fname?: string; lname?: string; email?: string; phoneNumber?: string }
+  ) {
+    const updateData: Record<string, unknown> = {};
+    if (data.fname !== undefined) updateData.fname = data.fname;
+    if (data.lname !== undefined) updateData.lname = data.lname;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+
+    const [updated] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updated) {
+      throw new Error("User not found");
+    }
+
+    return updated;
+  }
+
+  async updateStudentProfile(
+    userId: string,
+    data: {
+      hours?: number;
+      faculty?: string;
+      major?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ) {
+    const updateData: Record<string, unknown> = {};
+    if (data.hours !== undefined) updateData.hours = String(data.hours);
+    if (data.faculty !== undefined) updateData.faculty = data.faculty;
+    if (data.major !== undefined) updateData.major = data.major;
+    if (data.startDate !== undefined) updateData.startDate = data.startDate;
+    if (data.endDate !== undefined) updateData.endDate = data.endDate;
+
+    const [updated] = await db
+      .update(studentProfiles)
+      .set(updateData)
+      .where(eq(studentProfiles.userId, userId))
+      .returning();
+
+    if (!updated) {
+      throw new Error("Student profile not found");
+    }
+
+    return updated;
   }
 }
