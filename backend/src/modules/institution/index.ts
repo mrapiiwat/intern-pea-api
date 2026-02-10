@@ -39,7 +39,7 @@ export const institution = new Elysia({
       return response;
     },
     {
-      role: [1, 2],
+      role: [1],
       body: model.CreateInstitutionBody,
       detail: {
         summary: "สร้างสถาบันใหม่ (Create Institution)",
@@ -61,7 +61,7 @@ export const institution = new Elysia({
       return response;
     },
     {
-      role: [1, 2],
+      role: [1],
       params: model.params,
       body: model.UpdateInstitutionBody,
       detail: {
@@ -80,7 +80,7 @@ export const institution = new Elysia({
       return response;
     },
     {
-      role: [1, 2],
+      role: [1],
       params: model.params,
       detail: {
         summary: "ลบสถาบัน (Delete Institution)",
