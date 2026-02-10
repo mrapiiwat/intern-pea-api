@@ -10,14 +10,6 @@ INSERT INTO roles (name, description, created_at, updated_at)
 VALUES ('student', 'นักศึกษาฝึกงาน', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO institutions (institutions_type, name, created_at, updated_at)
-VALUES ('UNIVERSITY','DPU', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO institutions (institutions_type, name, created_at, updated_at)
-VALUES ('SCHOOL','โรงเรียนวัดบ้านหลวง', NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
-
 INSERT INTO departments (name, location, latitude, longitude, created_at, updated_at)
 VALUES ('กอพ.1', 'สนญ.', 1.1, 1.2, NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
