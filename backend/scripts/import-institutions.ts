@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import { db } from "@/db";
 import { institutions } from "@/db/schema";
   
+// required: bun add xlsx    
 // docker run: docker compose exec backend bun run scripts/import-institutions.ts --file schools_list.xlsx
 
 /**
