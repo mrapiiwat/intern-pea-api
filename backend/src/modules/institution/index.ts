@@ -32,14 +32,13 @@ export const institution = new Elysia({
 
   .post(
     "/",
-    async ({ session, body, set }) => {
-      const response = await institutionService.create(session.userId, body);
+    async ({ body, set }) => {
+      const response = await institutionService.create(body);
 
       set.status = 201;
       return response;
     },
     {
-      role: [1],
       body: model.CreateInstitutionBody,
       detail: {
         summary: "สร้างสถาบันใหม่ (Create Institution)",

@@ -60,8 +60,8 @@ export class InstitutionService {
     };
   }
 
-  async create(userId: string, data: model.CreateInstitutionBodyType) {
-    await this.assertUserExists(userId);
+  async create(data: model.CreateInstitutionBodyType) {
+    // await this.assertUserExists(userId);
 
     try {
       const [created] = await db
