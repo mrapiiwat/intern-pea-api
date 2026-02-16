@@ -12,7 +12,7 @@ ON CONFLICT (name) DO NOTHING;
 
 -- test seeds
 
-INSERT INTO public.institutions (institutions_type,name,created_at,updated_at)
+INSERT INTO institutions (institutions_type,name,created_at,updated_at)
 VALUES
   ('UNIVERSITY', 'มหาวิทยาลัยเกษตรศาสตร์', NOW(), NOW()),
   ('SCHOOL', 'โรงเรียนบ้านหนองโค', NOW(), NOW()),
