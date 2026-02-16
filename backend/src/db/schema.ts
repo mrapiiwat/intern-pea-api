@@ -27,6 +27,7 @@ export const internshipStatusEnum = pgEnum("internship_status_enum", [
   "PENDING",
   "INTERVIEW",
   "REVIEW",
+  "ACCEPT",
   "ACTIVE",
   "COMPLETE",
   "CANCEL",
@@ -603,11 +604,61 @@ export const applicationMentors = pgTable(
   ]
 );
 
+export const projects = pgTable(
+  "projects",
+  {
+    id: serial().primaryKey().notNull(),
+    name: text().notNull(),
+    description: text(),
+    isFinish: boolean("is_finish").default(false).notNull(),
+    projectOwner: varchar("project_owner", { length: 50 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.projectOwner],
+      foreignColumns: [users.id],
+      name: "projects_project_owner_fkey",
+    }),
+  ]
+);
+
+export const internProjects = pgTable(
+  "intern_projects",
+  {
+    id: serial().primaryKey().notNull(),
+    projectId: integer("project_id").notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.projectId],
+      foreignColumns: [projects.id],
+      name: "intern_projects_project_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "intern_projects_user_id_fkey",
+    }).onDelete("cascade"),
+    unique("intern_projects_unique").on(table.projectId, table.userId),
+  ]
+);
+
 export const dailyWorkLogs = pgTable(
   "daily_work_logs",
   {
     id: serial().primaryKey().notNull(),
     userId: varchar("user_id", { length: 50 }).notNull(),
+    projectId: integer("project_id").notNull(),
     workDate: timestamp("work_date", { mode: "string" }).notNull(),
     content: text(),
     mentorComment: text("mentor_comment"),
@@ -625,7 +676,12 @@ export const dailyWorkLogs = pgTable(
       columns: [table.userId],
       foreignColumns: [users.id],
       name: "daily_work_logs_user_id_fkey",
-    }),
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.projectId],
+      foreignColumns: [projects.id],
+      name: "daily_work_logs_project_id_fkey",
+    }).onDelete("cascade"),
     foreignKey({
       columns: [table.approveBy],
       foreignColumns: [staffProfiles.id],

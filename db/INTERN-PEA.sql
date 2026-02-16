@@ -292,9 +292,39 @@ CREATE TABLE public.application_mentors (
   FOREIGN KEY (mentor_id) REFERENCES public.staff_profiles(id)
 );
 
+CREATE TABLE public.projects (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  is_finish BOOLEAN NOT NULL DEFAULT FALSE,
+  project_owner VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT projects_project_owner_fkey
+    FOREIGN KEY (project_owner) REFERENCES public.users(id)
+);
+
+CREATE TABLE public.intern_projects (
+  id SERIAL PRIMARY KEY,
+  project_id INT NOT NULL,
+  user_id VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT intern_projects_project_id_fkey
+    FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE,
+
+  CONSTRAINT intern_projects_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+
+  CONSTRAINT intern_projects_unique
+    UNIQUE (project_id, user_id)
+);
+
 CREATE TABLE public.daily_work_logs (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL,
+  project_id INT NOT NULL,
   work_date TIMESTAMP NOT NULL,
   content TEXT,
   mentor_comment TEXT,
@@ -303,6 +333,12 @@ CREATE TABLE public.daily_work_logs (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (user_id) REFERENCES public.users(id),
-  FOREIGN KEY (approve_by) REFERENCES public.staff_profiles(id)
+  CONSTRAINT daily_work_logs_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+
+  CONSTRAINT daily_work_logs_project_id_fkey
+    FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE,
+
+  CONSTRAINT daily_work_logs_approve_by_fkey
+    FOREIGN KEY (approve_by) REFERENCES public.staff_profiles(id)
 );

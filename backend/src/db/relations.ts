@@ -12,10 +12,12 @@ import {
   docTypes,
   favorites,
   institutions,
+  internProjects,
   internshipPositionMentors,
   internshipPositions,
   leaveRequests,
   notifications,
+  projects,
   roles,
   sessions,
   staffProfiles,
@@ -39,6 +41,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   adminLogs: many(adminLogs),
   notifications: many(notifications),
   checkTimes: many(checkTimes),
+  projects: many(projects),
+  internProjects: many(internProjects),
   leaveRequests_userId: many(leaveRequests, {
     relationName: "leaveRequests_userId_users_id",
   }),
@@ -241,10 +245,34 @@ export const applicationMentorsRelations = relations(
   })
 );
 
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [projects.projectOwner],
+    references: [users.id],
+  }),
+  internProjects: many(internProjects),
+  dailyWorkLogs: many(dailyWorkLogs),
+}));
+
+export const internProjectsRelations = relations(internProjects, ({ one }) => ({
+  project: one(projects, {
+    fields: [internProjects.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [internProjects.userId],
+    references: [users.id],
+  }),
+}));
+
 export const dailyWorkLogsRelations = relations(dailyWorkLogs, ({ one }) => ({
   user: one(users, {
     fields: [dailyWorkLogs.userId],
     references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [dailyWorkLogs.projectId],
+    references: [projects.id],
   }),
   staffProfile: one(staffProfiles, {
     fields: [dailyWorkLogs.approveBy],
