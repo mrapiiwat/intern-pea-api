@@ -19,10 +19,9 @@ VALUES
   ('VOCATIONAL', 'วิทยาลัยเทคนิคกรุงเทพ', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO offices
-(name, short_name, manager_name, manager_contact, address, created_at, updated_at)
+INSERT INTO offices (name, short_name, manager_name, manager_contact, address, created_at, updated_at)
 VALUES
-  ('สำนักงานใหญ่การไฟฟ้าส่วนภูมิภาค','สนญ.','นายสมชาย ใจดี','โทร. 02-000-0000','200 ถนนงามวงศ์วาน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ',NOW(),NOW())
+  ('สำนักงานใหญ่การไฟฟ้าส่วนภูมิภาค','สนญ.','ดร.มงคล ตรีกิจจานนท์','โทร. 02-590-5100','200 ถนนงามวงศ์วาน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ',NOW(),NOW())
 ON CONFLICT (short_name) DO NOTHING;
 
 INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
