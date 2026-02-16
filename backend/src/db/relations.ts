@@ -17,6 +17,7 @@ import {
   internshipPositions,
   leaveRequests,
   notifications,
+  offices,
   projects,
   roles,
   sessions,
@@ -58,7 +59,15 @@ export const rolesRelations = relations(roles, ({ many }) => ({
   users: many(users),
 }));
 
-export const departmentsRelations = relations(departments, ({ many }) => ({
+export const officesRelations = relations(offices, ({ many }) => ({
+  departments: many(departments),
+}));
+
+export const departmentsRelations = relations(departments, ({ one, many }) => ({
+  office: one(offices, {
+    fields: [departments.officeId],
+    references: [offices.id],
+  }),
   users: many(users),
   internshipPositions: many(internshipPositions),
   applicationStatuses: many(applicationStatuses),

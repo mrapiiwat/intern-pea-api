@@ -129,14 +129,17 @@ export const users = pgTable(
   ]
 );
 
-export const departments = pgTable(
-  "departments",
+export const offices = pgTable(
+  "offices",
   {
     id: serial().primaryKey().notNull(),
-    name: varchar({ length: 150 }).notNull(),
-    location: varchar({ length: 255 }),
+    name: varchar({ length: 200 }).notNull(),
+    shortName: varchar("short_name", { length: 50 }).notNull(),
+    managerName: varchar("manager_name", { length: 150 }).notNull(),
+    managerContact: varchar("manager_contact", { length: 255 }).notNull(),
     latitude: doublePrecision().notNull(),
     longitude: doublePrecision().notNull(),
+    address: text().notNull(),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -144,7 +147,99 @@ export const departments = pgTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => [unique("departments_name_key").on(table.name)]
+  (table) => [unique("offices_short_name_key").on(table.shortName)]
+);
+
+export const departments = pgTable(
+  "departments",
+  {
+    id: serial().primaryKey().notNull(),
+
+    deptSap: integer("dept_sap").notNull(),
+    deptChangeCode: varchar("dept_change_code", { length: 20 }), // แทน BPCHAR(20)
+    deptUpper: integer("dept_upper"),
+
+    deptShort1: text("dept_short1"),
+    deptShort2: text("dept_short2"),
+    deptShort3: text("dept_short3"),
+    deptShort4: text("dept_short4"),
+    deptShort5: text("dept_short5"),
+    deptShort6: text("dept_short6"),
+    deptShort7: text("dept_short7"),
+    deptShort: text("dept_short"),
+
+    deptFull1: text("dept_full1"),
+    deptFull2: text("dept_full2"),
+    deptFull3: text("dept_full3"),
+    deptFull4: text("dept_full4"),
+    deptFull5: text("dept_full5"),
+    deptFull6: text("dept_full6"),
+    deptFull7: text("dept_full7"),
+    deptFull: text("dept_full"),
+
+    costCenterCode: varchar("cost_center_code", { length: 20 }), // แทน BPCHAR(20)
+    costCenterName: text("cost_center_name"),
+
+    peaCode: varchar("pea_code", { length: 6 }),
+    businessPlace: varchar("business_place", { length: 4 }),
+    businessArea: varchar("business_area", { length: 4 }),
+
+    resourceCode: varchar("resource_code", { length: 5 }), // แทน BPCHAR(5)
+    resourceName: text("resource_name"),
+
+    taxBranch: varchar("tax_branch", { length: 30 }),
+
+    isActive: boolean("is_active").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    createdBy: varchar("created_by", { length: 20 }), // แทน BPCHAR(20)
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedBy: varchar("updated_by", { length: 20 }).notNull(), // แทน BPCHAR(20)
+    isDeleted: boolean("is_deleted").default(false),
+
+    deptStableCode: text("dept_stable_code"),
+    deptSapShort: text("dept_sap_short"),
+    deptSapFull: text("dept_sap_full"),
+
+    deptFullEng1: text("dept_full_eng1"),
+    deptFullEng2: text("dept_full_eng2"),
+    deptFullEng3: text("dept_full_eng3"),
+    deptFullEng4: text("dept_full_eng4"),
+    deptFullEng5: text("dept_full_eng5"),
+    deptFullEng6: text("dept_full_eng6"),
+    deptFullEng7: text("dept_full_eng7"),
+
+    deptOrder: varchar("dept_order", { length: 10 }), // แทน BPCHAR(10)
+    flgDelimit: varchar("flg_delimit", { length: 5 }), // แทน BPCHAR(5)
+    delimitEffectivedt: timestamp("delimit_effectivedt", { mode: "string" }),
+    gsberCctr: text("gsber_cctr"),
+
+    deptLev2: integer("dept_lev2"),
+    deptLev3: integer("dept_lev3"),
+    seq: integer("seq"),
+
+    location: text("location"),
+
+    officeId: integer("office_id").notNull(),
+  },
+  (table) => [
+    unique("departments_dept_sap_key").on(table.deptSap),
+
+    foreignKey({
+      columns: [table.officeId],
+      foreignColumns: [offices.id],
+      name: "departments_office_id_fkey",
+    }),
+
+    foreignKey({
+      columns: [table.deptUpper],
+      foreignColumns: [table.deptSap],
+      name: "departments_dept_upper_fkey",
+    }),
+  ]
 );
 
 export const institutions = pgTable("institutions", {

@@ -24,15 +24,103 @@ CREATE TABLE public.doc_types (
 );
 COMMENT ON TABLE public.doc_types IS 'ประเภทเอกสาร Trans, Port, Resume, Request';
 
-CREATE TABLE public.departments (
-  id SERIAL PRIMARY KEY, 
-  name VARCHAR(150) NOT NULL UNIQUE, 
-  location VARCHAR(255),
+CREATE TABLE public.offices ( // x
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  short_name VARCHAR(50) NOT NULL UNIQUE,
+  manager_name VARCHAR(150) NOT NULL,
+  manager_contact VARCHAR(255) NOT NULL,
   latitude DOUBLE PRECISION NOT NULL,
   longitude DOUBLE PRECISION NOT NULL,
+  address TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+COMMENT ON TABLE public.offices IS 'สำนักงาน';
+
+CREATE TABLE public.departments (
+  id SERIAL PRIMARY KEY,
+
+  dept_sap INT4 NOT NULL,
+  dept_change_code BPCHAR(20) NULL,
+  dept_upper INT4 NULL,
+
+  dept_short1 TEXT NULL,
+  dept_short2 TEXT NULL,
+  dept_short3 TEXT NULL,
+  dept_short4 TEXT NULL,
+  dept_short5 TEXT NULL,
+  dept_short6 TEXT NULL,
+  dept_short7 TEXT NULL,
+  dept_short TEXT NULL,
+
+  dept_full1 TEXT NULL,
+  dept_full2 TEXT NULL,
+  dept_full3 TEXT NULL,
+  dept_full4 TEXT NULL,
+  dept_full5 TEXT NULL,
+  dept_full6 TEXT NULL,
+  dept_full7 TEXT NULL,
+  dept_full TEXT NULL,
+
+  cost_center_code BPCHAR(20) NULL,
+  cost_center_name TEXT NULL,
+
+  pea_code VARCHAR(6) NULL,
+  business_place VARCHAR(4) NULL,
+  business_area VARCHAR(4) NULL,
+
+  resource_code BPCHAR(5) NULL,
+  resource_name TEXT NULL,
+
+  tax_branch VARCHAR(30) NULL,
+
+  is_active BIT(1) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by BPCHAR(20) NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_by BPCHAR(20) NOT NULL,
+  is_deleted BIT(1) NULL DEFAULT B'0',
+
+  dept_stable_code TEXT NULL,
+  dept_sap_short TEXT NULL,
+  dept_sap_full TEXT NULL,
+
+  dept_full_eng1 TEXT NULL,
+  dept_full_eng2 TEXT NULL,
+  dept_full_eng3 TEXT NULL,
+  dept_full_eng4 TEXT NULL,
+  dept_full_eng5 TEXT NULL,
+  dept_full_eng6 TEXT NULL,
+  dept_full_eng7 TEXT NULL,
+
+  dept_order BPCHAR(10) NULL,
+  flg_delimit BPCHAR(5) NULL,
+  delimit_effectivedt TIMESTAMP(3) NULL,
+  gsber_cctr TEXT NULL,
+
+  dept_lev2 INT4 NULL,
+  dept_lev3 INT4 NULL,
+  seq INT4 NULL,
+
+  location TEXT NULL,
+
+  office_id INT NOT NULL,
+
+  CONSTRAINT departments_dept_sap_key UNIQUE (dept_sap),
+  CONSTRAINT departments_office_id_fkey
+    FOREIGN KEY (office_id) REFERENCES public.offices(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
+);
+
+-- Indexes 
+CREATE INDEX idx_departments_dept_sap ON public.departments USING btree (dept_sap);
+CREATE INDEX idx_departments_dept_upper ON public.departments USING btree (dept_upper);
+CREATE INDEX idx_departments_pea_null ON public.departments USING btree (pea_code) WHERE (pea_code IS NULL);
+CREATE INDEX idx_departments_resource_code ON public.departments USING btree (resource_code);
+CREATE INDEX idx_departments_office_id ON public.departments USING btree (office_id);
+
 COMMENT ON TABLE public.departments IS 'กองงาน';
 
 CREATE TABLE public.institutions (
@@ -326,7 +414,7 @@ CREATE TABLE public.daily_work_logs (
   user_id VARCHAR(50) NOT NULL,
   project_id INT NOT NULL,
   work_date TIMESTAMP NOT NULL,
-  content TEXT,
+  content TEXT, 
   mentor_comment TEXT,
   is_approve BOOLEAN NOT NULL DEFAULT FALSE,
   approve_by INT,
