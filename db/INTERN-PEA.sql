@@ -279,10 +279,15 @@ CREATE TABLE public.internship_positions (
   location VARCHAR(255),
   position_count INT,
   major VARCHAR(255),
-  recruit_start TIMESTAMP,
+
+  recruit_start TIMESTAMP, 
   recruit_end TIMESTAMP,
+  -- ระยะเวลาเปิดรับสมัคร
+
   apply_start TIMESTAMP,
   apply_end TIMESTAMP,
+  -- ระยะเวลาการฝึกงาน
+
   resume_rq BOOLEAN NOT NULL DEFAULT FALSE,
   portfolio_rq BOOLEAN NOT NULL DEFAULT FALSE,
   job_details TEXT,
