@@ -24,7 +24,7 @@ CREATE TABLE public.doc_types (
 );
 COMMENT ON TABLE public.doc_types IS 'ประเภทเอกสาร Trans, Port, Resume, Request';
 
-CREATE TABLE public.offices ( // x
+CREATE TABLE public.offices ( 
   id SERIAL PRIMARY KEY,
   name VARCHAR(200) NOT NULL,
   short_name VARCHAR(50) NOT NULL UNIQUE,
