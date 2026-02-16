@@ -61,6 +61,7 @@ export const rolesRelations = relations(roles, ({ many }) => ({
 
 export const officesRelations = relations(offices, ({ many }) => ({
   departments: many(departments),
+  internshipPositions: many(internshipPositions),
 }));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
@@ -155,6 +156,10 @@ export const leaveRequestsRelations = relations(leaveRequests, ({ one }) => ({
 export const internshipPositionsRelations = relations(
   internshipPositions,
   ({ one, many }) => ({
+    office: one(offices, {
+      fields: [internshipPositions.officeId],
+      references: [offices.id],
+    }),
     department: one(departments, {
       fields: [internshipPositions.departmentId],
       references: [departments.id],

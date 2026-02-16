@@ -474,18 +474,28 @@ export const internshipPositions = pgTable(
   {
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 255 }).notNull(),
+
+    officeId: integer("office_id").notNull(),
     departmentId: integer("department_id").notNull(),
+
     location: varchar({ length: 255 }),
     positionCount: integer("position_count"),
     major: varchar("major", { length: 255 }),
+
+    recruitStart: timestamp("recruit_start", { mode: "string" }),
+    recruitEnd: timestamp("recruit_end", { mode: "string" }),
     applyStart: timestamp("apply_start", { mode: "string" }),
     applyEnd: timestamp("apply_end", { mode: "string" }),
+
     resumeRq: boolean("resume_rq").notNull().default(false),
     portfolioRq: boolean("portfolio_rq").notNull().default(false),
+
     jobDetails: text("job_details"),
     requirement: text(),
     benefits: text(),
+
     recruitmentStatus: recruitmentStatusEnum("recruitment_status").notNull(),
+
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -494,6 +504,11 @@ export const internshipPositions = pgTable(
       .notNull(),
   },
   (table) => [
+    foreignKey({
+      columns: [table.officeId],
+      foreignColumns: [offices.id],
+      name: "internship_positions_office_id_fkey",
+    }),
     foreignKey({
       columns: [table.departmentId],
       foreignColumns: [departments.id],

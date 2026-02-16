@@ -274,10 +274,13 @@ CREATE TABLE public.notifications (
 CREATE TABLE public.internship_positions (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
+  office_id INT NOT NULL,
   department_id INT NOT NULL,
   location VARCHAR(255),
   position_count INT,
   major VARCHAR(255),
+  recruit_start TIMESTAMP,
+  recruit_end TIMESTAMP,
   apply_start TIMESTAMP,
   apply_end TIMESTAMP,
   resume_rq BOOLEAN NOT NULL DEFAULT FALSE,
@@ -289,8 +292,23 @@ CREATE TABLE public.internship_positions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (department_id) REFERENCES public.departments(id)
+  CONSTRAINT internship_positions_office_id_fkey
+    FOREIGN KEY (office_id) REFERENCES public.offices(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT internship_positions_department_id_fkey
+    FOREIGN KEY (department_id) REFERENCES public.departments(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
 );
+-- indexes
+CREATE INDEX idx_internship_positions_office_id
+  ON public.internship_positions (office_id);
+CREATE INDEX idx_internship_positions_department_id
+  ON public.internship_positions (department_id);
+CREATE INDEX idx_internship_positions_recruitment_status
+  ON public.internship_positions (recruitment_status);
 
 CREATE TABLE public.internship_position_mentors (
   id SERIAL PRIMARY KEY,
