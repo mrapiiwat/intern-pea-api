@@ -1,11 +1,11 @@
-CREATE TYPE public.internship_status_enum AS ENUM ('NONE', 'ACTIVE', 'COMPLETE', 'CANCEL');
+CREATE TYPE public.internship_status_enum AS ENUM ('PENDING','INTERVIEW','REVIEW', 'ACCEPT', 'ACTIVE', 'COMPLETE', 'CANCEL');
 CREATE TYPE public.leave_request_enum AS ENUM ('ABSENCE', 'SICK');
 CREATE TYPE public.leave_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE public.recruitment_status_enum AS ENUM ('OPEN', 'CLOSE');
-CREATE TYPE public.app_status_enum AS ENUM ('PENDING_DOCUMENT', 'PENDING_INTERVIEW', 'PENDING_CONFIRMATION', 'ACCEPTED', 'COMPLETE');
-CREATE TYPE public.validation_status_enum AS ENUM ('INVALID', 'VERIFIED', 'REQUESTPENDING');
+CREATE TYPE public.app_status_enum AS ENUM ('PENDING_DOCUMENT', 'PENDING_INTERVIEW', 'PENDING_CONFIRMATION', 'PENDING_REQUEST', 'PENDING_REVIEW' , 'COMPLETE');
+CREATE TYPE public.validation_status_enum AS ENUM ('PENDING', 'INVALID', 'VERIFIED');
 CREATE TYPE public.gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
-CREATE TYPE public.institutions_types AS ENUM ('UNIVERSITY','VOCATIONAL','SCHOOL','OTHERS');
+CREATE TYPE public.institutions_types AS ENUM ('UNIVERSITY','VOCATIONAL','SCHOOL','OTHERS'); 
 
 CREATE TABLE public.roles (
   id SERIAL PRIMARY KEY,

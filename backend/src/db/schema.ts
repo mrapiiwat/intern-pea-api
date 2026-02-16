@@ -19,11 +19,14 @@ export const appStatusEnum = pgEnum("app_status_enum", [
   "PENDING_DOCUMENT",
   "PENDING_INTERVIEW",
   "PENDING_CONFIRMATION",
-  "ACCEPTED",
+  "PENDING_REQUEST",
+  "PENDING_REVIEW",
   "COMPLETE",
 ]);
 export const internshipStatusEnum = pgEnum("internship_status_enum", [
-  "NONE",
+  "PENDING",
+  "INTERVIEW",
+  "REVIEW",
   "ACTIVE",
   "COMPLETE",
   "CANCEL",
@@ -47,9 +50,9 @@ export const staffRoleEnum = pgEnum("staff_role_enum", [
   "ADMIN",
 ]);
 export const validationStatusEnum = pgEnum("validation_status_enum", [
+  "PENDING",
   "INVALID",
   "VERIFIED",
-  "REQUESTPENDING",
 ]);
 export const genderEnum = pgEnum("gender_enum", ["MALE", "FEMALE", "OTHER"]);
 
