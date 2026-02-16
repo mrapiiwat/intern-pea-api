@@ -10,10 +10,24 @@ INSERT INTO roles (name, description, created_at, updated_at)
 VALUES ('student', 'นักศึกษาฝึกงาน', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO departments (name, location, latitude, longitude, created_at, updated_at)
-VALUES ('กอพ.1', 'สนญ.', 1.1, 1.2, NOW(), NOW())
+-- test seeds
+
+INSERT INTO public.institutions (institutions_type,name,created_at,updated_at)
+VALUES
+  ('UNIVERSITY', 'มหาวิทยาลัยเกษตรศาสตร์', NOW(), NOW()),
+  ('SCHOOL', 'โรงเรียนบ้านหนองโค', NOW(), NOW()),
+  ('VOCATIONAL', 'วิทยาลัยเทคนิคกรุงเทพ', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO departments (name, location, latitude, longitude, created_at, updated_at)
-VALUES ('กอพ.2', 'สนญ.', 1.4, 1.5, NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
+INSERT INTO offices
+(name, short_name, manager_name, manager_contact, address, created_at, updated_at)
+VALUES
+  ('สำนักงานใหญ่การไฟฟ้าส่วนภูมิภาค','สนญ.','นายสมชาย ใจดี','โทร. 02-000-0000','200 ถนนงามวงศ์วาน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ',NOW(),NOW())
+ON CONFLICT (short_name) DO NOTHING;
+
+INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
+VALUES
+  (100100, 'กอพ.1', 'กองอำนวยการพัฒนา 1', B'1', 1, NOW(), NOW(), 'SYSTEM'),
+  (100101, 'กอพ.2', 'กองอำนวยการพัฒนา 2', B'1', 1, NOW(), NOW(), 'SYSTEM'),
+  (100102, 'กอพ.3', 'กองอำนวยการพัฒนา 3', B'1', 1, NOW(), NOW(), 'SYSTEM')
+ON CONFLICT (dept_sap) DO NOTHING;
