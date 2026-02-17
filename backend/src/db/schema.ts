@@ -342,6 +342,23 @@ export const sessions = pgTable(
   ]
 );
 
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: varchar({ length: 50 }).primaryKey().notNull(),
+    identifier: text().notNull(), // email/phone หรือ identifier
+    value: text().notNull(), // token / code ที่ใช้ verify
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [unique("verifications_value_key").on(table.value)]
+);
+
 export const accounts = pgTable(
   "accounts",
   {

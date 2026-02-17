@@ -5,6 +5,7 @@ export const GetPositionsQuery = t.Object({
   limit: t.Optional(t.Numeric({ default: 10 })),
   search: t.Optional(t.String()),
   department: t.Optional(t.Numeric()),
+  office: t.Optional(t.Numeric()),
 });
 
 export const CreatePositionBody = t.Object({
@@ -12,13 +13,20 @@ export const CreatePositionBody = t.Object({
   location: t.Optional(t.String()),
   positionCount: t.Optional(t.Numeric()),
   major: t.Optional(t.String()),
+
+  recruitStart: t.Optional(t.String()),
+  recruitEnd: t.Optional(t.String()),
+
   applyStart: t.Optional(t.String()),
   applyEnd: t.Optional(t.String()),
+
   resumeRq: t.Optional(t.Boolean()),
   portfolioRq: t.Optional(t.Boolean()),
+
   jobDetails: t.Optional(t.String()),
   requirement: t.Optional(t.String()),
   benefits: t.Optional(t.String()),
+
   recruitmentStatus: t.Union([t.Literal("OPEN"), t.Literal("CLOSE")]),
   mentorStaffIds: t.Array(t.Numeric(), { minItems: 1 }),
 });
