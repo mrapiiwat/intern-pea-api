@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { BadRequestError, ConflictError } from "@/common/exceptions";
 import { isObject, isPostgresError } from "@/common/utils/type-guard";
@@ -8,35 +8,36 @@ import type * as model from "./model";
 
 export class DepartmentService {
   async findAll(query: model.GetDepartmentsQueryType) {
-    const { page = 1, limit = 20, search, office } = query as
-      model.GetDepartmentsQueryType & { office?: number };
+    const {
+      page = 1,
+      limit = 50,
+      search,
+      office,
+    } = query as model.GetDepartmentsQueryType & { office?: number };
 
     const offset = (page - 1) * limit;
 
     const filters: SQL[] = [];
 
-    // filter by office_id
     if (office !== undefined) {
       filters.push(eq(departments.officeId, office));
     }
 
-    // search by deptShort / deptFull 
     if (search) {
       const terms = search.split(" ").filter(Boolean);
-      if (terms.length > 0) {
-        const searchFilters: SQL[] = [];
 
-        for (const w of terms) {
-          searchFilters.push(
+      if (terms.length > 0) {
+        // ให้แต่ละคำไป match กับหลาย field แล้ว AND รวมกัน
+        const perTerm: SQL[] = terms.map(
+          (w) =>
             or(
               ilike(departments.deptShort, `%${w}%`),
               ilike(departments.deptFull, `%${w}%`),
               ilike(departments.peaCode, `%${w}%`)
             )!
-          );
-        }
+        );
 
-        filters.push(and(...searchFilters)!);
+        filters.push(and(...perTerm)!);
       }
     }
 
@@ -48,7 +49,7 @@ export class DepartmentService {
       .where(whereClause)
       .limit(limit)
       .offset(offset)
-      .orderBy(departments.deptSap);
+      .orderBy(desc(departments.deptSap), desc(departments.id));
 
     const [totalResult] = await db
       .select({ count: count() })
@@ -61,26 +62,34 @@ export class DepartmentService {
 
     return {
       data,
-      meta: { total, page, limit, totalPages, hasNextPage },
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+      },
     };
   }
 
   async create(data: model.CreateDepartmentBodyType) {
     try {
-      const payload: any = {
+      const payload: typeof departments.$inferInsert = {
         ...data,
         isActive: data.isActive ?? true,
         isDeleted: data.isDeleted ?? false,
       };
 
-      const [newDept] = await db.insert(departments).values(payload).returning();
+      const [newDept] = await db
+        .insert(departments)
+        .values(payload)
+        .returning();
+
       return newDept;
     } catch (error: unknown) {
       const err = isObject(error) && "cause" in error ? error.cause : error;
 
-      // unique violation
       if (isPostgresError(err) && err.code === "23505") {
-        // ปกติจะชนที่ dept_sap unique หรือ constraint อื่น
         throw new ConflictError("ข้อมูลแผนกซ้ำในระบบ (dept_sap หรือ key อื่นซ้ำ)");
       }
 
@@ -90,14 +99,10 @@ export class DepartmentService {
 
   async update(id: number, data: model.UpdateDepartmentBodyType) {
     try {
-      const payload: any = {
+      const payload: Partial<typeof departments.$inferInsert> = {
         ...data,
-        // set updatedAt
         updatedAt: new Date(),
       };
-
-      if (data.isActive !== undefined) payload.isActive = data.isActive;
-      if (data.isDeleted !== undefined) payload.isDeleted = data.isDeleted;
 
       const [updatedDept] = await db
         .update(departments)
@@ -132,7 +137,10 @@ export class DepartmentService {
         throw new NotFoundError(`ไม่พบข้อมูลแผนกรหัส ${id}`);
       }
 
-      return { success: true, message: "ลบข้อมูลแผนกเรียบร้อยแล้ว" };
+      return {
+        success: true,
+        message: "ลบข้อมูลแผนกเรียบร้อยแล้ว",
+      };
     } catch (error: unknown) {
       const err = isObject(error) && "cause" in error ? error.cause : error;
 

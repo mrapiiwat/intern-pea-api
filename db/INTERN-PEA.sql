@@ -194,6 +194,16 @@ CREATE TABLE public.sessions (
   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE verification_tokens (
+  id SERIAL PRIMARY KEY,
+  identifier TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  type TEXT NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
 CREATE TABLE public.accounts (
   id VARCHAR(50) PRIMARY KEY,
   account_id TEXT NOT NULL,

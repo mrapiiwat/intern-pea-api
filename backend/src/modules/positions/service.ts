@@ -6,9 +6,9 @@ import {
   departments,
   internshipPositionMentors,
   internshipPositions,
+  offices,
   staffProfiles,
   users,
-  offices,
 } from "@/db/schema";
 import type * as model from "./model";
 
@@ -95,8 +95,13 @@ export class PositionService {
    * แสดง mentor (หลายคน)
    */
   async findAll(query: model.GetPositionsQueryType) {
-    const { page = 1, limit = 10, search, department, office } = query as
-      model.GetPositionsQueryType & { office?: number };
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      department,
+      office,
+    } = query as model.GetPositionsQueryType & { office?: number };
 
     const offset = (page - 1) * limit;
     const filters: SQL[] = [];
@@ -144,7 +149,11 @@ export class PositionService {
       .where(whereClause)
       .limit(limit)
       .offset(offset)
-      .orderBy(internshipPositions.id);
+      .orderBy(
+        internshipPositions.recruitStart,
+        internshipPositions.createdAt,
+        internshipPositions.id
+      );
 
     // รวม mentors ให้เป็นตำแหน่งละก้อน
     const map = new Map<number, PositionWithMentors>();
@@ -283,9 +292,8 @@ export class PositionService {
    */
   async create(userId: string, data: model.CreatePositionBodyType) {
     await this.assertUserExists(userId);
-    const { departmentId, officeId } = await this.getUserDepartmentAndOffice(
-      userId
-    );
+    const { departmentId, officeId } =
+      await this.getUserDepartmentAndOffice(userId);
 
     const [position] = await db
       .insert(internshipPositions)

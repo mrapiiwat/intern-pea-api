@@ -9,8 +9,8 @@ export const GetDepartmentsQuery = t.Object({
 
 export const CreateDepartmentBody = t.Object({
   // --- key fields ---
-  deptSap: t.Numeric(), 
-  officeId: t.Numeric(), 
+  deptSap: t.Numeric(),
+  officeId: t.Numeric(),
 
   // --- SAP fields ---
   deptChangeCode: t.Optional(t.String()),
@@ -50,7 +50,7 @@ export const CreateDepartmentBody = t.Object({
   isDeleted: t.Optional(t.Boolean({ default: false })),
 
   createdBy: t.Optional(t.String()),
-  updatedBy: t.String(), 
+  updatedBy: t.String(),
 
   deptStableCode: t.Optional(t.String()),
   deptSapShort: t.Optional(t.String()),
@@ -73,7 +73,7 @@ export const CreateDepartmentBody = t.Object({
   deptLev3: t.Optional(t.Numeric()),
   seq: t.Optional(t.Numeric()),
 
-  location: t.Optional(t.String()), 
+  location: t.Optional(t.String()),
 });
 
 export const params = t.Object({

@@ -5,7 +5,7 @@ export const GetPositionsQuery = t.Object({
   limit: t.Optional(t.Numeric({ default: 10 })),
   search: t.Optional(t.String()),
   department: t.Optional(t.Numeric()),
-  office: t.Optional(t.Numeric()), 
+  office: t.Optional(t.Numeric()),
 });
 
 export const CreatePositionBody = t.Object({
@@ -15,7 +15,7 @@ export const CreatePositionBody = t.Object({
   major: t.Optional(t.String()),
 
   recruitStart: t.Optional(t.String()),
-  recruitEnd: t.Optional(t.String()), 
+  recruitEnd: t.Optional(t.String()),
 
   applyStart: t.Optional(t.String()),
   applyEnd: t.Optional(t.String()),
