@@ -19,10 +19,10 @@ VALUES
   ('VOCATIONAL', 'วิทยาลัยเทคนิคกรุงเทพ', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO offices (name, short_name, manager_name, manager_contact, address, created_at, updated_at)
+INSERT INTO offices (name, short_name, manager_name, manager_contact, latitude, longitude, address, created_at, updated_at)
 VALUES
-  ('สำนักงานใหญ่การไฟฟ้าส่วนภูมิภาค','สนญ.','ดร.มงคล ตรีกิจจานนท์','โทร. 02-590-5100','200 ถนนงามวงศ์วาน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ 10900',NOW(),NOW())
-  ('การไฟฟ้าส่วนภูมิภาคสาขาย่อยอำเภอพญาเม็งราย','กฟจ.เชียงราย','นายอดิเรก ไลไธสง','โทร. 0-5379-9069','114 ม.18 (อ้างอิงข้อมูลที่ตั้ง) ต.แม่เปา อ.พญาเม็งราย จ.เชียงราย 57290',NOW(),NOW())
+  ('สำนักงานใหญ่การไฟฟ้าส่วนภูมิภาค','สนญ.','ดร.มงคล ตรีกิจจานนท์','โทร. 02-590-5100', 13.8463, 100.5609, '200 ถนนงามวงศ์วาน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ 10900', NOW(), NOW()),
+  ('การไฟฟ้าส่วนภูมิภาคสาขาย่อยอำเภอพญาเม็งราย','กฟจ.เชียงราย','นายอดิเรก ไลไธสง','โทร. 0-5379-9069', 19.7400, 100.0900, '114 ม.18 (อ้างอิงข้อมูลที่ตั้ง) ต.แม่เปา อ.พญาเม็งราย จ.เชียงราย 57290', NOW(), NOW())
 ON CONFLICT (short_name) DO NOTHING;
 
 INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
