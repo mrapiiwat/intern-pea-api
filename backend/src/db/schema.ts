@@ -343,10 +343,10 @@ export const sessions = pgTable(
   ]
 );
 
-export const verifications = pgTable(
-  "verifications",
+export const verification = pgTable(
+  "verification",
   {
-    id: varchar({ length: 50 }).primaryKey().notNull(),
+    id: text("id").primaryKey(),
     identifier: text().notNull(), // email/phone หรือ identifier
     value: text().notNull(), // token / code ที่ใช้ verify
     expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
@@ -371,10 +371,10 @@ export const accounts = pgTable(
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
     accessTokenExpiresAt: timestamp("access_token_expires_at", {
-      mode: "string",
+      mode: "date",
     }),
     refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
-      mode: "string",
+      mode: "date",
     }),
     scope: text(),
     password: text(),

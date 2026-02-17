@@ -194,13 +194,13 @@ CREATE TABLE public.sessions (
   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE verifications (
-  id SERIAL PRIMARY KEY,
-  identifier TEXT NOT NULL,
-  token TEXT NOT NULL UNIQUE,
-  type TEXT NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE verification (
+  id text PRIMARY KEY NOT NULL,
+  identifier text NOT NULL,
+  value text NOT NULL UNIQUE,
+  expires_at timestamp NOT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
