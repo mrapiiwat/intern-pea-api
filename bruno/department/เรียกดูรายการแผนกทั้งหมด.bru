@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{url}}/dept
+  url: {{url}}/dept?page=2
   body: none
   auth: bearer
+}
+
+params:query {
+  page: 2
 }
 
 auth:bearer {
