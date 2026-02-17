@@ -10,6 +10,14 @@ INSERT INTO roles (name, description, created_at, updated_at)
 VALUES ('student', 'นักศึกษาฝึกงาน', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
+
+INSERT INTO doc_types (name, description)
+VALUES
+  ('transcript', 'ใบเกรด'),
+  ('resume', 'เรซูเม่'),
+  ('portfolio', 'แฟ้มผลงาน'),
+  ('request_letter', 'เอกสารขอความอนุเคราะห์')
+ON CONFLICT (name) DO NOTHING;
 -- test seeds
 
 INSERT INTO institutions (institutions_type,name,created_at,updated_at)

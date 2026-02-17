@@ -13,7 +13,11 @@ export const ApplicationInformationBody = t.Object({
   expectation: t.String({ minLength: 1 }),
 });
 
-export type CreateApplicationBodyType = typeof CreateApplicationBody.static;
+export const UploadDocumentBody = t.Object({
+  file: t.File(),
+});
 
+export type UploadDocumentBodyType = typeof UploadDocumentBody.static;
+export type CreateApplicationBodyType = typeof CreateApplicationBody.static;
 export type ApplicationInformationBodyType =
   typeof ApplicationInformationBody.static;

@@ -1,4 +1,6 @@
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { desc, eq } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 import {
   BadRequestError,
   ForbiddenError,
@@ -6,12 +8,14 @@ import {
 } from "@/common/exceptions";
 import { db } from "@/db";
 import {
+  applicationDocuments,
   applicationInformations,
   applicationStatuses,
   internshipPositions,
   studentProfiles,
   users,
 } from "@/db/schema";
+import { BUCKET_NAME, s3Client } from "@/lib/s3";
 
 export class ApplicationService {
   async create(userId: string, positionId: number) {
@@ -141,6 +145,113 @@ export class ApplicationService {
         });
 
       return saved;
+    });
+  }
+
+  async uploadTranscript(userId: string, applicationId: number, file: File) {
+    return await db.transaction(async (tx) => {
+      const [app] = await tx
+        .select({
+          id: applicationStatuses.id,
+          ownerUserId: applicationStatuses.userId,
+          status: applicationStatuses.applicationStatus,
+          positionId: applicationStatuses.positionId,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.id, applicationId));
+
+      if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
+      if (app.ownerUserId !== userId)
+        throw new ForbiddenError("ไม่มีสิทธิ์เข้าถึงใบสมัครนี้");
+      if (app.status !== "PENDING_DOCUMENT")
+        throw new BadRequestError("ไม่อยู่ในขั้นตอนรอยื่นเอกสาร");
+
+      const [pos] = await tx
+        .select({
+          resumeRq: internshipPositions.resumeRq,
+          portfolioRq: internshipPositions.portfolioRq,
+        })
+        .from(internshipPositions)
+        .where(eq(internshipPositions.id, app.positionId));
+
+      if (!pos) throw new NotFoundError("ไม่พบตำแหน่งฝึกงาน");
+
+      const ext = file.name.split(".").pop() || "bin";
+      const filename = `${uuidv4()}.${ext}`;
+      const s3Key = `applications/${applicationId}/1/${filename}`;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: s3Key,
+          Body: buffer,
+          ContentType: file.type,
+        })
+      );
+
+      await tx
+        .insert(applicationDocuments)
+        .values({
+          applicationStatusId: applicationId,
+          docTypeId: 1,
+          docFile: s3Key,
+          validationStatus: "VERIFIED",
+          note: null,
+        })
+        .onConflictDoUpdate({
+          target: [
+            applicationDocuments.applicationStatusId,
+            applicationDocuments.docTypeId,
+          ],
+          set: {
+            docFile: s3Key,
+            validationStatus: "VERIFIED",
+            note: null,
+            updatedAt: new Date(),
+          },
+        });
+
+      const requiredDocTypeIds: number[] = [1];
+      if (pos.resumeRq) requiredDocTypeIds.push(2);
+      if (pos.portfolioRq) requiredDocTypeIds.push(3);
+
+      const uploaded = await tx
+        .select({
+          docTypeId: applicationDocuments.docTypeId,
+        })
+        .from(applicationDocuments)
+        .where(eq(applicationDocuments.applicationStatusId, applicationId));
+
+      const uploadedSet = new Set(uploaded.map((d) => d.docTypeId));
+      const isComplete = requiredDocTypeIds.every((id) => uploadedSet.has(id));
+
+      if (isComplete) {
+        await tx
+          .update(applicationStatuses)
+          .set({
+            applicationStatus: "PENDING_INTERVIEW",
+            updatedAt: new Date(),
+          })
+          .where(eq(applicationStatuses.id, applicationId));
+
+        await tx
+          .update(studentProfiles)
+          .set({
+            internshipStatus: "INTERVIEW",
+          })
+          .where(eq(studentProfiles.userId, userId));
+      }
+
+      return {
+        key: s3Key,
+        validationStatus: "VERIFIED",
+        applicationStatus: isComplete
+          ? "PENDING_INTERVIEW"
+          : "PENDING_DOCUMENT",
+      };
     });
   }
 }

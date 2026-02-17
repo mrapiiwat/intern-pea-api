@@ -54,4 +54,27 @@ export const application = new Elysia({
         description: "บันทึก skill และ expectation ของใบสมัคร",
       },
     }
+  )
+
+  .post(
+    "/:id/documents/transcript",
+    async ({ session, params: { id }, body, set }) => {
+      const response = await applicationService.uploadTranscript(
+        session.userId,
+        Number(id),
+        body.file
+      );
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [3],
+      params: model.params,
+      body: model.UploadDocumentBody,
+      detail: {
+        summary: "อัปโหลด Transcript",
+        description: "อัปโหลด Transcript ในขั้นตอน PENDING_DOCUMENT",
+      },
+    }
   );
