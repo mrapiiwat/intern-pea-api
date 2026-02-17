@@ -8,11 +8,11 @@ import {
   internshipPositions,
   staffProfiles,
   users,
+  offices,
 } from "@/db/schema";
 import type * as model from "./model";
 
 type MentorDTO = {
-  // รูปแบบข้อมูล mentor ที่ส่งให้ API
   staffId: number;
   name: string;
   email: string | null;
@@ -32,13 +32,23 @@ type OwnerDTO = {
 
 type DepartmentDTO = {
   id: number;
-  name: string;
+  deptSap: number;
+  deptShort: string | null;
+  deptFull: string | null;
   location: string | null;
+  officeId: number;
+};
+
+type OfficeDTO = {
+  id: number;
+  name: string;
+  shortName: string;
 };
 
 type EnrichedPosition = PositionWithMentors & {
   owners: OwnerDTO[];
   department: DepartmentDTO | null;
+  office: OfficeDTO | null;
 };
 
 export class PositionService {
@@ -51,34 +61,52 @@ export class PositionService {
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
   }
 
-  private async getUserDepartmentId(userId: string): Promise<number> {
-    const [user] = await db
-      .select({ id: users.id, departmentId: users.departmentId })
+  /**
+   * ผู้ใช้ต้องมี department_id
+   * และเราจะดึง office_id จาก departments เพื่อใช้กับ internship_positions
+   */
+  private async getUserDepartmentAndOffice(userId: string): Promise<{
+    departmentId: number;
+    officeId: number;
+  }> {
+    const [row] = await db
+      .select({
+        departmentId: users.departmentId,
+        officeId: departments.officeId,
+      })
       .from(users)
+      .leftJoin(departments, eq(departments.id, users.departmentId))
       .where(eq(users.id, userId));
 
-    if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
-    if (user.departmentId === null) {
+    if (!row) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
+    if (row.departmentId === null) {
       throw new ForbiddenError("ผู้ใช้งานยังไม่ได้สังกัดแผนก (department)");
     }
+    if (row.officeId === null) {
+      throw new ForbiddenError("department ของผู้ใช้งานยังไม่ได้ผูกสำนักงาน (office)");
+    }
 
-    return user.departmentId;
+    return { departmentId: row.departmentId, officeId: row.officeId };
   }
 
   /**
    * GET /position
-   * เห็นทุก department
-   * filter ได้ด้วย search และ department
+   * filter ได้ด้วย search, department, office
    * แสดง mentor (หลายคน)
    */
   async findAll(query: model.GetPositionsQueryType) {
-    const { page = 1, limit = 10, search, department } = query;
-    const offset = (page - 1) * limit;
+    const { page = 1, limit = 10, search, department, office } = query as
+      model.GetPositionsQueryType & { office?: number };
 
+    const offset = (page - 1) * limit;
     const filters: SQL[] = [];
 
     if (department !== undefined) {
       filters.push(eq(internshipPositions.departmentId, department));
+    }
+
+    if (office !== undefined) {
+      filters.push(eq(internshipPositions.officeId, office));
     }
 
     if (search) {
@@ -96,6 +124,7 @@ export class PositionService {
     const rows = await db
       .select({
         position: internshipPositions,
+
         mentorStaffId: internshipPositionMentors.mentorStaffId,
         mentorFname: users.fname,
         mentorLname: users.lname,
@@ -124,10 +153,7 @@ export class PositionService {
       const id = r.position.id;
 
       if (!map.has(id)) {
-        map.set(id, {
-          ...r.position,
-          mentors: [],
-        });
+        map.set(id, { ...r.position, mentors: [] });
       }
 
       if (r.mentorStaffId) {
@@ -142,10 +168,9 @@ export class PositionService {
 
     const positions = Array.from(map.values());
 
-    // ดึง departmentIds จาก positions (มี departmentId แน่นอน)
     const departmentIds = [...new Set(positions.map((p) => p.departmentId))];
+    const officeIds = [...new Set(positions.map((p) => p.officeId))];
 
-    // owners (roleId = 2) ของแต่ละ department
     const owners =
       departmentIds.length > 0
         ? await db
@@ -165,17 +190,33 @@ export class PositionService {
             )
         : [];
 
-    // department info
+    // department info (โครงสร้างใหม่)
     const departmentData =
       departmentIds.length > 0
         ? await db
             .select({
               id: departments.id,
-              name: departments.name,
+              deptSap: departments.deptSap,
+              deptShort: departments.deptShort,
+              deptFull: departments.deptFull,
               location: departments.location,
+              officeId: departments.officeId,
             })
             .from(departments)
             .where(or(...departmentIds.map((dId) => eq(departments.id, dId))))
+        : [];
+
+    // office info
+    const officeData =
+      officeIds.length > 0
+        ? await db
+            .select({
+              id: offices.id,
+              name: offices.name,
+              shortName: offices.shortName,
+            })
+            .from(offices)
+            .where(or(...officeIds.map((oId) => eq(offices.id, oId))))
         : [];
 
     const ownersByDept = new Map<number, OwnerDTO[]>();
@@ -193,9 +234,9 @@ export class PositionService {
       ownersByDept.set(deptId, list);
     }
 
-    // enrich ใส่ owner/department
     const enriched: EnrichedPosition[] = positions.map((position) => {
       const dept = departmentData.find((d) => d.id === position.departmentId);
+      const off = officeData.find((o) => o.id === position.officeId);
 
       return {
         ...position,
@@ -203,8 +244,18 @@ export class PositionService {
         department: dept
           ? {
               id: dept.id,
-              name: dept.name,
+              deptSap: dept.deptSap,
+              deptShort: dept.deptShort ?? null,
+              deptFull: dept.deptFull ?? null,
               location: dept.location ?? null,
+              officeId: dept.officeId,
+            }
+          : null,
+        office: off
+          ? {
+              id: off.id,
+              name: off.name,
+              shortName: off.shortName,
             }
           : null,
       };
@@ -215,7 +266,7 @@ export class PositionService {
       .from(internshipPositions)
       .where(whereClause);
 
-    const total = Number(totalResult.count); // กัน count เป็น string/bigint
+    const total = Number(totalResult.count);
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
 
@@ -227,28 +278,38 @@ export class PositionService {
 
   /**
    * POST /position
-   * ผูก departmentId จาก user
+   * ผูก departmentId + officeId จาก user (derive จาก departments)
    * ผูก mentor หลายคนได้
    */
   async create(userId: string, data: model.CreatePositionBodyType) {
     await this.assertUserExists(userId);
-    const departmentId = await this.getUserDepartmentId(userId);
+    const { departmentId, officeId } = await this.getUserDepartmentAndOffice(
+      userId
+    );
 
     const [position] = await db
       .insert(internshipPositions)
       .values({
         departmentId,
+        officeId,
+
         name: data.name,
         location: data.location ?? null,
         positionCount: data.positionCount ?? null,
         major: data.major ?? null,
+
+        recruitStart: data.recruitStart ?? null,
+        recruitEnd: data.recruitEnd ?? null,
         applyStart: data.applyStart ?? null,
         applyEnd: data.applyEnd ?? null,
+
         resumeRq: data.resumeRq ?? false,
         portfolioRq: data.portfolioRq ?? false,
+
         jobDetails: data.jobDetails ?? null,
         requirement: data.requirement ?? null,
         benefits: data.benefits ?? null,
+
         recruitmentStatus: data.recruitmentStatus,
       })
       .returning();
@@ -272,14 +333,30 @@ export class PositionService {
    */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
     await this.assertUserExists(userId);
-    const departmentId = await this.getUserDepartmentId(userId);
+    const { departmentId } = await this.getUserDepartmentAndOffice(userId);
 
     const [updated] = await db
       .update(internshipPositions)
       .set({
-        ...data,
+        // อัปเดตเฉพาะ field ที่มีจริงในตาราง
+        name: data.name ?? undefined,
+        location: data.location ?? undefined,
+        positionCount: data.positionCount ?? undefined,
+        major: data.major ?? undefined,
+
+        recruitStart: data.recruitStart ?? undefined,
+        recruitEnd: data.recruitEnd ?? undefined,
         applyStart: data.applyStart ?? undefined,
         applyEnd: data.applyEnd ?? undefined,
+
+        resumeRq: data.resumeRq ?? undefined,
+        portfolioRq: data.portfolioRq ?? undefined,
+
+        jobDetails: data.jobDetails ?? undefined,
+        requirement: data.requirement ?? undefined,
+        benefits: data.benefits ?? undefined,
+
+        recruitmentStatus: data.recruitmentStatus ?? undefined,
         updatedAt: new Date(),
       })
       .where(
@@ -315,7 +392,7 @@ export class PositionService {
    */
   async delete(userId: string, id: number) {
     await this.assertUserExists(userId);
-    const departmentId = await this.getUserDepartmentId(userId);
+    const { departmentId } = await this.getUserDepartmentAndOffice(userId);
 
     const [deleted] = await db
       .delete(internshipPositions)
