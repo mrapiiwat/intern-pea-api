@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { username } from "better-auth/plugins";
+import { genericOAuth, username } from "better-auth/plugins";
 import type { InferSelectModel } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -15,6 +15,7 @@ export const auth = betterAuth({
       user: schema.users,
       session: schema.sessions,
       account: schema.accounts,
+      verification: schema.verification,
     },
   }),
 
@@ -23,7 +24,46 @@ export const auth = betterAuth({
     requireEmailVerification: false,
   },
 
-  plugins: [username()],
+  plugins: [
+    username(),
+    genericOAuth({
+      config: [
+        {
+          providerId: "keycloak",
+          clientId: Bun.env.KEYCLOAK_CLIENT_ID!,
+          clientSecret: Bun.env.KEYCLOAK_CLIENT_SECRET,
+          discoveryUrl: Bun.env.KEYCLOAK_DISCOVERY_URL,
+
+          scopes: [
+            "openid",
+            "profile",
+            "email",
+            "phone",
+            "address",
+            "offline_access",
+          ],
+          mapProfileToUser: async (profile) => {
+            return {
+              roleId: 2,
+              departmentId: 1,
+              fname:
+                profile.given_name || profile.name?.split(" ")[0] || "Unknown",
+              lname:
+                profile.family_name ||
+                profile.name?.split(" ").slice(1).join(" ") ||
+                "",
+              emailVerified: profile.email_verified || false,
+              gender: "OTHER",
+              username:
+                profile.preferred_username || profile.email?.split("@")[0],
+              displayUsername: profile.name || profile.preferred_username,
+              phoneNumber: profile.phone_number || null,
+            };
+          },
+        },
+      ],
+    }),
+  ],
 
   user: {
     additionalFields: {
@@ -53,8 +93,19 @@ export const auth = betterAuth({
 
   advanced: {
     cookiePrefix: "better-auth",
+    useSecureCookies: false,
+    defaultCookieAttributes: {
+      sameSite: "lax",
+      secure: false,
+    },
+    crossDomain: {
+      enabled: true,
+    },
   },
 
   baseURL: Bun.env.BETTER_AUTH_BASE_URL,
   secret: Bun.env.BETTER_AUTH_SECRET,
+  trustedOrigins: ["http://localhost:8080"],
 });
+
+export type Auth = typeof auth;

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { BadRequestError, InternalServerError } from "@/common/exceptions";
 import { db } from "@/db";
 import { studentProfiles, users } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { type Auth, auth } from "@/lib/auth";
 import type * as model from "./model";
 
 const ROLE_INTERN = 3;
@@ -99,5 +99,17 @@ export class AuthService {
     });
 
     return response;
+  }
+
+  async loginWithKeycloak() {
+    const api = auth.api as Auth["api"];
+
+    return await api.signInSocial({
+      body: {
+        provider: "keycloak",
+        callbackURL: "/api/auth/callback/keycloak",
+      },
+      asResponse: true,
+    });
   }
 }
