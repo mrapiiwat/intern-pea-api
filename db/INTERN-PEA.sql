@@ -194,7 +194,7 @@ CREATE TABLE public.sessions (
   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE verification (
+CREATE TABLE verifications (
   id SERIAL PRIMARY KEY,
   identifier TEXT NOT NULL,
   token TEXT NOT NULL UNIQUE,
