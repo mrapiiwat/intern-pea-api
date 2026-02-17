@@ -22,6 +22,7 @@ export const appStatusEnum = pgEnum("app_status_enum", [
   "PENDING_REQUEST",
   "PENDING_REVIEW",
   "COMPLETE",
+  "CANCEL",
 ]);
 export const internshipStatusEnum = pgEnum("internship_status_enum", [
   "PENDING",
