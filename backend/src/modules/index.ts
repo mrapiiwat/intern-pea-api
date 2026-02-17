@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { application } from "./application";
 import { auth } from "./auth";
 import { department } from "./department";
 import { favorite } from "./favorite";
@@ -16,6 +17,7 @@ const modules = new Elysia({ prefix: "/api" })
   .use(user)
   .use(institution)
   .use(favorite)
-  .use(institutionTicketRoutes);
+  .use(institutionTicketRoutes)
+  .use(application);
 
 export default modules;

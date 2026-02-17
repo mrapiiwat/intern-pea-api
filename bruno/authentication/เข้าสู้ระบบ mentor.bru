@@ -4,12 +4,13 @@ meta {
   seq: 5
 }
 
-post {
-  url: 
+get {
+  url: http://localhost:8080/api/auth/sign-in/keycloak
   body: none
   auth: inherit
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

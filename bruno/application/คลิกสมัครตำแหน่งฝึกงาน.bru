@@ -1,0 +1,21 @@
+meta {
+  name: คลิกสมัครตำแหน่งฝึกงาน
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/applications
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { "positionId": 1 }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
