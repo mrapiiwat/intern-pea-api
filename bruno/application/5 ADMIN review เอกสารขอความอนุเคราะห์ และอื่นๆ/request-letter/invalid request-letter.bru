@@ -1,7 +1,7 @@
 meta {
-  name: verified
+  name: invalid request-letter
   type: http
-  seq: 1
+  seq: 2
 }
 
 put {
@@ -11,7 +11,7 @@ put {
 }
 
 body:json {
-  { "status": "VERIFIED" }
+  { "status": "INVALID", "note": "เอกสารไม่ครบ/เอกสารไม่ถูกต้อง" }
 }
 
 settings {

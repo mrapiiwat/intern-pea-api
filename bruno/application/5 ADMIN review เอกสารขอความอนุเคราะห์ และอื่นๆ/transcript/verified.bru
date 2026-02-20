@@ -1,0 +1,22 @@
+meta {
+  name: verified
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{url}}/applications/2/documents/transcript/review
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "status": "VERIFIED"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

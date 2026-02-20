@@ -5,13 +5,13 @@ meta {
 }
 
 post {
-  url: {{url}}/applications/1/documents/request-letter
+  url: {{url}}/applications/2/documents/request-letter
   body: multipartForm
   auth: inherit
 }
 
 body:multipart-form {
-  file:  @contentType(Auto)
+  file: @file(C:\Users\troo_\OneDrive\Documents\PE107 HW1.pdf) @contentType(Auto)
 }
 
 settings {

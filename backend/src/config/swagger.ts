@@ -6,8 +6,7 @@ const swaggerConfig = swagger({
     info: {
       title: "PEA Internship Management API",
       version: "1.0.0",
-      description:
-        "ระบบบริหารจัดการนักศึกษาฝึกงาน การไฟฟ้าส่วนภูมิภาค (PEA)",
+      description: "ระบบบริหารจัดการนักศึกษาฝึกงาน การไฟฟ้าส่วนภูมิภาค (PEA)",
     },
     tags: [
       {
@@ -25,13 +24,11 @@ const swaggerConfig = swagger({
       },
       {
         name: "Institutions",
-        description:
-          "ข้อมูลสถาบันการศึกษา (ค้นหา / เพิ่มสถาบันใหม่ในขั้นตอนสมัคร)",
+        description: "ข้อมูลสถาบันการศึกษา (ค้นหา / เพิ่มสถาบันใหม่ในขั้นตอนสมัคร)",
       },
       {
         name: "Departments",
-        description:
-          "ข้อมูลกองงาน, สำนักงาน, และโครงสร้างหน่วยงานของ PEA",
+        description: "ข้อมูลกองงาน, สำนักงาน, และโครงสร้างหน่วยงานของ PEA",
       },
       {
         name: "Positions",

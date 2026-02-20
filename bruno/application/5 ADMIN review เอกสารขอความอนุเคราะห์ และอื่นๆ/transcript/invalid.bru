@@ -1,0 +1,23 @@
+meta {
+  name: invalid
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{url}}/applications/2/documents/transcript/review
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "status": "INVALID",
+    "note": "เกรดไม่ครบทุกภาคเรียน"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

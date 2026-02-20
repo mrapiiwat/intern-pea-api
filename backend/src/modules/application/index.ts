@@ -1,10 +1,20 @@
 import { Elysia } from "elysia";
 
+import { BadRequestError } from "@/common/exceptions";
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { ApplicationService } from "./service";
 
 const applicationService = new ApplicationService();
+
+const DOC_TYPE_MAP = {
+  transcript: 1,
+  resume: 2,
+  portfolio: 3,
+  "request-letter": 4,
+} as const;
+
+type DocTypeName = keyof typeof DOC_TYPE_MAP;
 
 export const application = new Elysia({
   prefix: "/applications",
@@ -191,23 +201,32 @@ export const application = new Elysia({
   )
 
   .put(
-    "/:id/documents/request-letter/review",
-    async ({ session, params: { id }, body, set }) => {
-      const res = await applicationService.reviewRequestLetter(
+    "/:id/documents/:docType/review",
+    async ({ session, params: { id, docType }, body, set }) => {
+      const docTypeId = DOC_TYPE_MAP[docType as DocTypeName];
+
+      if (!docTypeId) {
+        throw new BadRequestError("docType ไม่ถูกต้อง");
+      }
+
+      const res = await applicationService.reviewDocument(
         session.userId,
         Number(id),
+        docTypeId,
         body.status,
         body.note
       );
+
       set.status = 200;
       return res;
     },
     {
       role: [1],
-      params: model.params,
-      body: model.ReviewRequestLetterBody,
+      params: model.reviewDocByNameParams,
+      body: model.ReviewDocumentBody,
       detail: {
-        summary: "Admin ตรวจเอกสารขอความอนุเคราะห์",
+        summary:
+          "Admin ตรวจเอกสาร (transcript/resume/portfolio/request-letter)",
       },
     }
   );

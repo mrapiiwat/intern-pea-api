@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import {
   BadRequestError,
@@ -168,8 +168,14 @@ export class ApplicationService {
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
       if (app.ownerUserId !== userId)
         throw new ForbiddenError("ไม่มีสิทธิ์เข้าถึงใบสมัครนี้");
-      if (app.status !== "PENDING_DOCUMENT")
+
+      const canUploadStatuses = new Set([
+        "PENDING_DOCUMENT",
+        "PENDING_REQUEST",
+      ]);
+      if (!canUploadStatuses.has(app.status)) {
         throw new BadRequestError("ไม่อยู่ในขั้นตอนรอยื่นเอกสาร");
+      }
 
       const [pos] = await tx
         .select({
@@ -204,13 +210,16 @@ export class ApplicationService {
         })
       );
 
+      const nextValidationStatus =
+        app.status === "PENDING_DOCUMENT" ? "VERIFIED" : "PENDING";
+
       await tx
         .insert(applicationDocuments)
         .values({
           applicationStatusId: applicationId,
           docTypeId,
           docFile: s3Key,
-          validationStatus: "VERIFIED",
+          validationStatus: nextValidationStatus,
           note: null,
         })
         .onConflictDoUpdate({
@@ -220,50 +229,57 @@ export class ApplicationService {
           ],
           set: {
             docFile: s3Key,
-            validationStatus: "VERIFIED",
+            validationStatus: nextValidationStatus,
             note: null,
             updatedAt: new Date(),
           },
         });
 
-      const requiredDocTypeIds: number[] = [1];
-      if (pos.resumeRq) requiredDocTypeIds.push(2);
-      if (pos.portfolioRq) requiredDocTypeIds.push(3);
+      if (app.status === "PENDING_DOCUMENT") {
+        const requiredDocTypeIds: number[] = [1];
+        if (pos.resumeRq) requiredDocTypeIds.push(2);
+        if (pos.portfolioRq) requiredDocTypeIds.push(3);
 
-      const uploaded = await tx
-        .select({
-          docTypeId: applicationDocuments.docTypeId,
-        })
-        .from(applicationDocuments)
-        .where(eq(applicationDocuments.applicationStatusId, applicationId));
+        const uploaded = await tx
+          .select({ docTypeId: applicationDocuments.docTypeId })
+          .from(applicationDocuments)
+          .where(eq(applicationDocuments.applicationStatusId, applicationId));
 
-      const uploadedSet = new Set(uploaded.map((d) => d.docTypeId));
-      const isComplete = requiredDocTypeIds.every((id) => uploadedSet.has(id));
+        const uploadedSet = new Set(uploaded.map((d) => d.docTypeId));
+        const isComplete = requiredDocTypeIds.every((id) =>
+          uploadedSet.has(id)
+        );
 
-      if (isComplete) {
-        await tx
-          .update(applicationStatuses)
-          .set({
-            applicationStatus: "PENDING_INTERVIEW",
-            updatedAt: new Date(),
-          })
-          .where(eq(applicationStatuses.id, applicationId));
+        if (isComplete) {
+          await tx
+            .update(applicationStatuses)
+            .set({
+              applicationStatus: "PENDING_INTERVIEW",
+              updatedAt: new Date(),
+            })
+            .where(eq(applicationStatuses.id, applicationId));
 
-        await tx
-          .update(studentProfiles)
-          .set({
-            internshipStatus: "INTERVIEW",
-          })
-          .where(eq(studentProfiles.userId, userId));
+          await tx
+            .update(studentProfiles)
+            .set({ internshipStatus: "INTERVIEW" })
+            .where(eq(studentProfiles.userId, userId));
+        }
+
+        return {
+          key: s3Key,
+          docTypeId,
+          validationStatus: nextValidationStatus,
+          applicationStatus: isComplete
+            ? "PENDING_INTERVIEW"
+            : "PENDING_DOCUMENT",
+        };
       }
 
       return {
         key: s3Key,
         docTypeId,
-        validationStatus: "VERIFIED",
-        applicationStatus: isComplete
-          ? "PENDING_INTERVIEW"
-          : "PENDING_DOCUMENT",
+        validationStatus: nextValidationStatus,
+        applicationStatus: "PENDING_REQUEST",
       };
     });
   }
@@ -412,17 +428,26 @@ export class ApplicationService {
           },
         });
 
+      await tx
+        .update(applicationStatuses)
+        .set({
+          applicationStatus: "PENDING_REVIEW",
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationStatuses.id, applicationId));
+
       return {
         key: s3Key,
         validationStatus: "PENDING",
-        applicationStatus: "PENDING_REQUEST",
+        applicationStatus: "PENDING_REVIEW",
       };
     });
   }
 
-  async reviewRequestLetter(
+  async reviewDocument(
     adminUserId: string,
     applicationId: number,
+    docTypeId: 1 | 2 | 3 | 4,
     status: "VERIFIED" | "INVALID",
     note?: string
   ) {
@@ -445,20 +470,23 @@ export class ApplicationService {
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
-      if (app.status !== "PENDING_REVIEW" && app.status !== "PENDING_REQUEST")
-        throw new BadRequestError("สถานะไม่ถูกต้องสำหรับการตรวจเอกสาร");
+      if (app.status !== "PENDING_REVIEW" && app.status !== "PENDING_REQUEST") {
+        throw new BadRequestError(
+          "สถานะไม่ถูกต้องสำหรับการตรวจเอกสาร โปรดรอถึงขั้นตอนตรวจสอบเอกสารขอความอนุเคราะห์"
+        );
+      }
 
       const [doc] = await tx
-        .select({
-          id: applicationDocuments.id,
-        })
+        .select({ id: applicationDocuments.id })
         .from(applicationDocuments)
         .where(
-          eq(applicationDocuments.applicationStatusId, applicationId) &&
-            eq(applicationDocuments.docTypeId, 4)
+          and(
+            eq(applicationDocuments.applicationStatusId, applicationId),
+            eq(applicationDocuments.docTypeId, docTypeId)
+          )
         );
 
-      if (!doc) throw new NotFoundError("ไม่พบเอกสารขอความอนุเคราะห์");
+      if (!doc) throw new NotFoundError("ไม่พบเอกสาร");
 
       await tx
         .update(applicationDocuments)
@@ -469,43 +497,65 @@ export class ApplicationService {
         })
         .where(eq(applicationDocuments.id, doc.id));
 
-      if (status === "INVALID") {
-        await tx
-          .update(applicationStatuses)
-          .set({
-            applicationStatus: "PENDING_REQUEST",
-            updatedAt: new Date(),
-          })
-          .where(eq(applicationStatuses.id, applicationId));
+      const isAfterRequestStage =
+        app.status === "PENDING_REQUEST" || app.status === "PENDING_REVIEW";
 
-        return { applicationStatus: "PENDING_REQUEST" };
+      if (status === "INVALID") {
+        if (isAfterRequestStage) {
+          await tx
+            .update(applicationStatuses)
+            .set({
+              applicationStatus: "PENDING_REQUEST",
+              updatedAt: new Date(),
+            })
+            .where(eq(applicationStatuses.id, applicationId));
+
+          return { applicationStatus: "PENDING_REQUEST" };
+        }
+
+        return { applicationStatus: app.status };
       }
 
-      const docs = await tx
-        .select({
-          validationStatus: applicationDocuments.validationStatus,
-        })
-        .from(applicationDocuments)
-        .where(eq(applicationDocuments.applicationStatusId, applicationId));
+      if (status === "VERIFIED" && isAfterRequestStage) {
+        const docs = await tx
+          .select({
+            validationStatus: applicationDocuments.validationStatus,
+          })
+          .from(applicationDocuments)
+          .where(eq(applicationDocuments.applicationStatusId, applicationId));
 
-      const allVerified = docs.every((d) => d.validationStatus === "VERIFIED");
+        const allVerified = docs.every(
+          (d) => d.validationStatus === "VERIFIED"
+        );
 
-      if (!allVerified) throw new BadRequestError("ยังมีเอกสารที่ไม่ผ่านการตรวจสอบ");
+        if (allVerified) {
+          await tx
+            .update(applicationStatuses)
+            .set({
+              applicationStatus: "COMPLETE",
+              updatedAt: new Date(),
+            })
+            .where(eq(applicationStatuses.id, applicationId));
 
-      await tx
-        .update(applicationStatuses)
-        .set({
-          applicationStatus: "COMPLETE",
-          updatedAt: new Date(),
-        })
-        .where(eq(applicationStatuses.id, applicationId));
+          await tx
+            .update(studentProfiles)
+            .set({ internshipStatus: "ACTIVE" })
+            .where(eq(studentProfiles.userId, app.userId));
 
-      await tx
-        .update(studentProfiles)
-        .set({ internshipStatus: "ACTIVE" })
-        .where(eq(studentProfiles.userId, app.userId));
+          return { applicationStatus: "COMPLETE" };
+        }
+      }
 
-      return { applicationStatus: "COMPLETE" };
+      return { applicationStatus: app.status };
     });
+  }
+
+  async reviewRequestLetter(
+    adminUserId: string,
+    applicationId: number,
+    status: "VERIFIED" | "INVALID",
+    note?: string
+  ) {
+    return this.reviewDocument(adminUserId, applicationId, 4, status, note);
   }
 }

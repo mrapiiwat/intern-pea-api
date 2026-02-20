@@ -17,9 +17,19 @@ export const UploadDocumentBody = t.Object({
   file: t.File(),
 });
 
-export const ReviewRequestLetterBody = t.Object({
+export const ReviewDocumentBody = t.Object({
   status: t.Union([t.Literal("VERIFIED"), t.Literal("INVALID")]),
   note: t.Optional(t.String()),
+});
+
+export const reviewDocByNameParams = t.Object({
+  id: t.Numeric(),
+  docType: t.Union([
+    t.Literal("transcript"),
+    t.Literal("resume"),
+    t.Literal("portfolio"),
+    t.Literal("request-letter"),
+  ]),
 });
 
 export type UploadDocumentBodyType = typeof UploadDocumentBody.static;
