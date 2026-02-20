@@ -10,7 +10,9 @@ import { db } from "@/db";
 import {
   applicationDocuments,
   applicationInformations,
+  applicationMentors,
   applicationStatuses,
+  internshipPositionMentors,
   internshipPositions,
   studentProfiles,
   users,
@@ -341,6 +343,7 @@ export class ApplicationService {
           status: applicationStatuses.applicationStatus,
           departmentId: applicationStatuses.departmentId,
           userId: applicationStatuses.userId,
+          positionId: applicationStatuses.positionId, // ✅ เพิ่ม
         })
         .from(applicationStatuses)
         .where(eq(applicationStatuses.id, applicationId));
@@ -369,7 +372,29 @@ export class ApplicationService {
         .set({ departmentId: app.departmentId })
         .where(eq(users.id, app.userId));
 
-      return { applicationStatus: "PENDING_REQUEST" };
+      const mentors = await tx
+        .select({
+          mentorStaffId: internshipPositionMentors.mentorStaffId,
+        })
+        .from(internshipPositionMentors)
+        .where(eq(internshipPositionMentors.positionId, app.positionId));
+
+      if (mentors.length > 0) {
+        await tx
+          .insert(applicationMentors)
+          .values(
+            mentors.map((m) => ({
+              applicationStatusId: applicationId,
+              mentorId: m.mentorStaffId,
+            }))
+          )
+          .onConflictDoNothing(); // กันซ้ำด้วย UNIQUE(application_status_id, mentor_id)
+      }
+
+      return {
+        applicationStatus: "PENDING_REQUEST",
+        mentorsLinked: mentors.length,
+      };
     });
   }
 
