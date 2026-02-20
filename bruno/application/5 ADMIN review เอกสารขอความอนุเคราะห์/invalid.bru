@@ -1,0 +1,20 @@
+meta {
+  name: invalid
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{url}}/applications/1/documents/request-letter/review
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { "status": "INVALID", "note": "เอกสารไม่ครบ/เอกสารไม่ถูกต้อง" }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

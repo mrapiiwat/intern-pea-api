@@ -1,0 +1,15 @@
+meta {
+  name: confirm accept intern
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{url}}/applications/<applicationId>/confirm/accept
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

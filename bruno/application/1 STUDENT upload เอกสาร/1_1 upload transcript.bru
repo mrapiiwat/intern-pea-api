@@ -1,0 +1,20 @@
+meta {
+  name: 1_1 upload transcript
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/applications/1/documents/transcript
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file: @file(C:\Users\troo_\OneDrive\Documents\Branding_Thailand_ไก่ฟ้า-1.pdf) @contentType(Auto)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

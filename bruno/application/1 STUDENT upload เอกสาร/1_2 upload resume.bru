@@ -1,0 +1,20 @@
+meta {
+  name: 1_2 upload resume
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/applications/1/documents/resume
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file: @file(C:\Users\troo_\OneDrive\Documents\ลาวดวงเดือน.pdf) @contentType(Auto)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

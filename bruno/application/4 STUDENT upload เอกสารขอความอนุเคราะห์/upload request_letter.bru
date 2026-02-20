@@ -1,0 +1,20 @@
+meta {
+  name: upload request_letter
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/applications/1/documents/request-letter
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file:  @contentType(Auto)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

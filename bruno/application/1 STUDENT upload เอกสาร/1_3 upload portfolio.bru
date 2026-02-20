@@ -1,0 +1,20 @@
+meta {
+  name: 1_3 upload portfolio
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/applications/1/documents/portfolio
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file:  @contentType(Auto)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
