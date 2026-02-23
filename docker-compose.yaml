@@ -5,6 +5,16 @@ services:
       dockerfile: dockerfile
     container_name: intern-pea-backend
     restart: unless-stopped
+    environment:
+      # Better Auth / Backend base URL & secret
+      BETTER_AUTH_BASE_URL: ${BETTER_AUTH_BASE_URL:-http://localhost:8080}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+
+      # Keycloak OIDC configuration
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_DISCOVERY_URL: ${KEYCLOAK_DISCOVERY_URL}
+
     volumes:
       - ./backend:/app
       - /app/node_modules

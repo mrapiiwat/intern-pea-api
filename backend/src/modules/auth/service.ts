@@ -101,13 +101,14 @@ export class AuthService {
     return response;
   }
 
-  async loginWithKeycloak() {
+  async loginWithKeycloak(headers: Headers) {
     const api = auth.api as Auth["api"];
 
     return await api.signInSocial({
+      headers: headers,
       body: {
         provider: "keycloak",
-        callbackURL: "/api/auth/callback/keycloak",
+        callbackURL: "http://localhost:8080/api/user/profile",
       },
       asResponse: true,
     });
