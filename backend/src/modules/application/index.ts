@@ -25,9 +25,31 @@ export const application = new Elysia({
   .post(
     "/",
     async ({ session, body, set }) => {
-      const response = await applicationService.create(
+      const response = await applicationService.apply(
         session.userId,
         body.positionId
+      );
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [3],
+      body: model.CreateApplicationBody,
+      detail: {
+        summary: "กดสมัคร (ยังไม่สร้างใบสมัคร)",
+        description:
+          "ตรวจสิทธิ์นักศึกษา + ตรวจประกาศ OPEN แต่ยังไม่สร้าง application_statuses จนกว่าจะส่งข้อมูล skill/expectation",
+      },
+    }
+  )
+
+  .post(
+    "/positions/:positionId/information",
+    async ({ session, params: { positionId }, body, set }) => {
+      const response = await applicationService.submitInformation(
+        session.userId,
+        Number(positionId),
+        body
       );
 
       set.status = 201;
@@ -35,33 +57,12 @@ export const application = new Elysia({
     },
     {
       role: [3],
-      body: model.CreateApplicationBody,
-      detail: {
-        summary: "สมัครฝึกงาน",
-        description: "นักศึกษากดสมัครฝึกงาน → สร้างใบสมัคร (PENDING_DOCUMENT)",
-      },
-    }
-  )
-
-  .post(
-    "/:id/information",
-    async ({ session, params: { id }, body, set }) => {
-      const response = await applicationService.upsertInformation(
-        session.userId,
-        Number(id),
-        body
-      );
-
-      set.status = 200;
-      return response;
-    },
-    {
-      role: [3],
-      params: model.params,
+      params: model.positionParams,
       body: model.ApplicationInformationBody,
       detail: {
-        summary: "กรอกข้อมูลทักษะและสิ่งที่คาดหวัง",
-        description: "บันทึก skill และ expectation ของใบสมัคร",
+        summary: "ส่ง skill/expectation เพื่อสร้างใบสมัคร",
+        description:
+          "สร้าง application_statuses + application_informations พร้อมกัน และเปลี่ยนสถานะ student จาก IDLE เป็น PENDING",
       },
     }
   )

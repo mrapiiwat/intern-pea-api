@@ -1,4 +1,4 @@
-CREATE TYPE public.internship_status_enum AS ENUM ('PENDING','INTERVIEW','REVIEW', 'ACCEPT', 'ACTIVE', 'COMPLETE', 'CANCEL');
+CREATE TYPE public.internship_status_enum AS ENUM ('IDLE', 'PENDING', 'INTERVIEW', 'REVIEW', 'ACCEPT', 'ACTIVE', 'COMPLETE', 'CANCEL');
 CREATE TYPE public.leave_request_enum AS ENUM ('ABSENCE', 'SICK');
 CREATE TYPE public.leave_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE public.recruitment_status_enum AS ENUM ('OPEN', 'CLOSE');

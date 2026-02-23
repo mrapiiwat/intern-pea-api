@@ -40,7 +40,7 @@ export class AuthService {
           major: data.major,
           studentNote: data.studentNote ?? null,
           hours: String(data.totalHours),
-          internshipStatus: "PENDING",
+          internshipStatus: "IDLE",
           isActive: true,
           startDate: data.startDate || null,
           endDate: data.endDate || null,

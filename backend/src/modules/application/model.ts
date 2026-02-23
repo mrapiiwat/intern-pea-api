@@ -4,6 +4,10 @@ export const params = t.Object({
   id: t.Numeric(),
 });
 
+export const positionParams = t.Object({
+  positionId: t.Numeric(),
+});
+
 export const CreateApplicationBody = t.Object({
   positionId: t.Integer({ minimum: 1 }),
 });
