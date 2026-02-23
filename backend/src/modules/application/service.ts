@@ -75,7 +75,7 @@ export class ApplicationService {
   async submitInformation(
     userId: string,
     positionId: number,
-    data: { skill: string; expectation: string }
+    data: { skill: string; expectation: string; startDate: Date; endDate: Date }
   ) {
     return await db.transaction(async (tx) => {
       const [user] = await tx
@@ -121,6 +121,13 @@ export class ApplicationService {
 
       const nextRound = (last?.round ?? 0) + 1;
 
+      if (!data.startDate || !data.endDate) {
+        throw new BadRequestError("กรุณาระบุ startDate และ endDate");
+      }
+      if (data.endDate < data.startDate) {
+        throw new BadRequestError("endDate ต้องมากกว่าหรือเท่ากับ startDate");
+      }
+
       const [app] = await tx
         .insert(applicationStatuses)
         .values({
@@ -141,6 +148,8 @@ export class ApplicationService {
         applicationStatusId: app.id,
         skill: data.skill,
         expectation: data.expectation,
+        startDate: data.startDate,
+        endDate: data.endDate,
       });
 
       await tx

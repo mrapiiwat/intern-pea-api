@@ -650,6 +650,8 @@ export const applicationInformations = pgTable(
     applicationStatusId: integer("application_status_id").notNull(),
     skill: text(),
     expectation: text(),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

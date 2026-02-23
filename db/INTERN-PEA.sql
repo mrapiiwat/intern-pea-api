@@ -371,6 +371,8 @@ CREATE TABLE public.application_informations (
   application_status_id INT NOT NULL UNIQUE,
   skill TEXT,
   expectation TEXT,
+  start_date TIMESTAMP,
+  end_date TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

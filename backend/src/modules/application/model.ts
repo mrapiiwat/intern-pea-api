@@ -15,6 +15,8 @@ export const CreateApplicationBody = t.Object({
 export const ApplicationInformationBody = t.Object({
   skill: t.String({ minLength: 1 }),
   expectation: t.String({ minLength: 1 }),
+  startDate: t.Date(),
+  endDate: t.Date(),
 });
 
 export const UploadDocumentBody = t.Object({
