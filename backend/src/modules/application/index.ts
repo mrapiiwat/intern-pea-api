@@ -273,4 +273,47 @@ export const application = new Elysia({
         summary: "Admin/Owner ดูประวัติการสมัครของนักศึกษารายคน",
       },
     }
+  )
+
+  .put(
+    "/:id/cancel",
+    async ({ session, params: { id }, set }) => {
+      const res = await applicationService.cancelByStudent(
+        session.userId,
+        Number(id)
+      );
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [3],
+      params: model.params,
+      detail: {
+        summary: "Student ยกเลิกใบสมัคร",
+        description: "ทำได้เฉพาะ PENDING_DOCUMENT และต้องยังไม่ส่งเอกสารใดๆ",
+      },
+    }
+  )
+
+  .put(
+    "/:id/interview/reject",
+    async ({ session, params: { id }, body, set }) => {
+      const res = await applicationService.cancelByOwner(
+        session.userId,
+        Number(id),
+        body.reason
+      );
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [2],
+      params: model.params,
+      body: model.CancelByOwnerBody,
+      detail: {
+        summary: "Owner ไม่อนุมัติ (ยกเลิกใบสมัคร)",
+        description:
+          "ใช้ได้ในสถานะ PENDING_INTERVIEW และ PENDING_CONFIRMATION โดยต้องระบุเหตุผล (เก็บใน status_note)",
+      },
+    }
   );

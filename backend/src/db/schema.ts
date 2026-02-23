@@ -607,6 +607,7 @@ export const applicationStatuses = pgTable(
     internshipRound: integer("internship_round").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     activeKey: varchar("active_key", { length: 50 }),
+    statusNote: text("status_note"),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

@@ -2,13 +2,13 @@ import { Elysia, t } from "elysia";
 
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
-import { AdminApplicationDocumentsService } from "./service";
+import { ApplicationDocumentsService } from "./service";
 
-const service = new AdminApplicationDocumentsService();
+const service = new ApplicationDocumentsService();
 
-export const adminApplicationDocuments = new Elysia({
-  prefix: "/admin/application-documents",
-  tags: ["Admin Application Documents"],
+export const ApplicationDocuments = new Elysia({
+  prefix: "/application-documents",
+  tags: ["Application Documents"],
 })
   .use(isAuthenticated)
 
@@ -48,15 +48,14 @@ export const adminApplicationDocuments = new Elysia({
       return body;
     },
     {
-      role: [1],
+      auth: true,
       query: t.Object({
         key: t.String({ minLength: 1 }),
         download: t.Optional(t.Boolean()),
       }),
       detail: {
-        summary: "Admin preview/download document file",
-        description:
-          "คืนไฟล์จาก MinIO ผ่าน backend เพื่อให้ preview/download ได้โดยไม่เจอ SignatureDoesNotMatch",
+        summary: "preview/download document file",
+        description: "คืนไฟล์จาก MinIO ผ่าน backend เพื่อให้ preview/download",
       },
     }
   );

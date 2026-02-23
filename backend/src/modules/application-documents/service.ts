@@ -1,11 +1,10 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
 import { applicationDocuments, applicationStatuses } from "@/db/schema";
-import { BUCKET_NAME, MINIO_PUBLIC_ENDPOINT, s3Client } from "@/lib/s3";
+import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type { AdminListDocsQueryType } from "./model";
 
 function docTypeName(docTypeId: number) {
@@ -23,7 +22,17 @@ function docTypeName(docTypeId: number) {
   }
 }
 
-export class AdminApplicationDocumentsService {
+function parseApplicationIdFromKey(key: string): number | null {
+  // expected: applications/{applicationId}/{docTypeId}/{filename}
+  const parts = key.split("/");
+  if (parts.length < 2) return null;
+  if (parts[0] !== "applications") return null;
+
+  const id = Number(parts[1]);
+  return Number.isFinite(id) ? id : null;
+}
+
+export class ApplicationDocumentsService {
   async findAllDocuments(
     requesterUserId: string,
     query: AdminListDocsQueryType
@@ -63,7 +72,10 @@ export class AdminApplicationDocumentsService {
     if (query.q && query.q.trim().length > 0) {
       const like = `%${query.q.trim()}%`;
       conditions.push(
-        sql`(${ilike(applicationDocuments.docFile, like)} OR ${ilike(applicationDocuments.note, like)})`
+        sql`(${ilike(applicationDocuments.docFile, like)} OR ${ilike(
+          applicationDocuments.note,
+          like
+        )})`
       );
     }
 
@@ -100,52 +112,43 @@ export class AdminApplicationDocumentsService {
     }));
   }
 
-  async getDocumentSignedUrl(
-    requesterUserId: string,
-    key: string,
-    disposition: "inline" | "attachment" = "inline"
-  ) {
-    const [me] = await db
-      .select({ roleId: sql<number>`"users"."role_id"` })
-      .from(sql`users`)
-      .where(sql`"users"."id" = ${requesterUserId}`);
-
-    if (!me || me.roleId !== 1) throw new ForbiddenError("อนุญาตเฉพาะ Admin");
-
-    const filename = key.split("/").pop() ?? "file";
-
-    const command = new GetObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      ResponseContentDisposition:
-        disposition === "inline"
-          ? `inline; filename="${filename}"`
-          : `attachment; filename="${filename}"`,
-    });
-
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-
-    const internalBase = Bun.env.MINIO_ENDPOINT ?? "";
-    const publicBase = MINIO_PUBLIC_ENDPOINT ?? "";
-
-    const url =
-      internalBase && publicBase
-        ? signedUrl.replace(internalBase, publicBase)
-        : signedUrl;
-
-    return { url, expiresIn: 300, disposition, key };
-  }
-
   async streamDocument(
     requesterUserId: string,
     key: string
   ): Promise<{ body: ReadableStream; contentType: string; filename: string }> {
     const [me] = await db
-      .select({ roleId: sql<number>`"users"."role_id"` })
+      .select({
+        roleId: sql<number>`"users"."role_id"`,
+        departmentId: sql<number | null>`"users"."department_id"`,
+      })
       .from(sql`users`)
       .where(sql`"users"."id" = ${requesterUserId}`);
 
-    if (!me || me.roleId !== 1) throw new ForbiddenError("อนุญาตเฉพาะ Admin");
+    if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+
+    const applicationId = parseApplicationIdFromKey(key);
+    if (!applicationId) throw new ForbiddenError("key ไม่ถูกต้อง");
+
+    const [app] = await db
+      .select({
+        userId: applicationStatuses.userId,
+        departmentId: applicationStatuses.departmentId,
+      })
+      .from(applicationStatuses)
+      .where(eq(applicationStatuses.id, applicationId));
+
+    if (!app) throw new ForbiddenError("ไม่พบใบสมัคร");
+
+    const isAdmin = me.roleId === 1;
+    const isOwnerSameDept =
+      me.roleId === 2 &&
+      me.departmentId != null &&
+      me.departmentId === app.departmentId;
+    const isStudentOwner = me.roleId === 3 && requesterUserId === app.userId;
+
+    if (!isAdmin && !isOwnerSameDept && !isStudentOwner) {
+      throw new ForbiddenError("ไม่มีสิทธิ์เข้าถึงเอกสารนี้");
+    }
 
     const filename = key.split("/").pop() ?? "file";
 
@@ -156,10 +159,8 @@ export class AdminApplicationDocumentsService {
       })
     );
 
-    const body = res.Body as ReadableStream;
-
     return {
-      body,
+      body: res.Body as ReadableStream,
       contentType: res.ContentType ?? "application/octet-stream",
       filename,
     };

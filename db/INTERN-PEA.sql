@@ -353,7 +353,8 @@ CREATE TABLE public.application_statuses (
   application_status public.app_status_enum NOT NULL,
   internship_round INT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  active_key VARCHAR(50), 
+  active_key VARCHAR(50),
+  status_note TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

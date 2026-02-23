@@ -739,4 +739,126 @@ export class ApplicationService {
   ) {
     return this.reviewDocument(adminUserId, applicationId, 4, status, note);
   }
+
+  async cancelByStudent(userId: string, applicationId: number) {
+    return await db.transaction(async (tx) => {
+      const [me] = await tx
+        .select({ id: users.id, roleId: users.roleId })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      if (me.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
+
+      const [app] = await tx
+        .select({
+          id: applicationStatuses.id,
+          ownerUserId: applicationStatuses.userId,
+          status: applicationStatuses.applicationStatus,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.id, applicationId));
+
+      if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
+      if (app.ownerUserId !== userId)
+        throw new ForbiddenError("ไม่มีสิทธิ์เข้าถึงใบสมัครนี้");
+
+      if (app.status !== "PENDING_DOCUMENT") {
+        throw new BadRequestError("ยกเลิกได้เฉพาะก่อนส่งเอกสาร (PENDING_DOCUMENT)");
+      }
+
+      // ต้องยังไม่ส่งเอกสารใดๆ
+      const [doc] = await tx
+        .select({ id: applicationDocuments.id })
+        .from(applicationDocuments)
+        .where(eq(applicationDocuments.applicationStatusId, applicationId))
+        .limit(1);
+
+      if (doc) {
+        throw new BadRequestError("ไม่สามารถยกเลิกได้ เพราะมีการส่งเอกสารแล้ว");
+      }
+
+      await tx
+        .update(applicationStatuses)
+        .set({
+          applicationStatus: "CANCEL",
+          statusNote: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationStatuses.id, applicationId));
+
+      // ทำให้นักศึกษากลับไปสมัครรอบใหม่ได้
+      await tx
+        .update(studentProfiles)
+        .set({ internshipStatus: "CANCEL" })
+        .where(eq(studentProfiles.userId, userId));
+
+      return { applicationStatus: "CANCEL" };
+    });
+  }
+
+  async cancelByOwner(
+    ownerUserId: string,
+    applicationId: number,
+    reason: string
+  ) {
+    return await db.transaction(async (tx) => {
+      const [owner] = await tx
+        .select({ roleId: users.roleId, departmentId: users.departmentId })
+        .from(users)
+        .where(eq(users.id, ownerUserId));
+
+      if (!owner) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      if (owner.roleId !== 2) throw new ForbiddenError("อนุญาตเฉพาะ Owner");
+      if (!owner.departmentId) throw new ForbiddenError("ไม่มีสิทธิ์อนุมัติ");
+
+      const [app] = await tx
+        .select({
+          id: applicationStatuses.id,
+          status: applicationStatuses.applicationStatus,
+          departmentId: applicationStatuses.departmentId,
+          studentUserId: applicationStatuses.userId,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.id, applicationId));
+
+      if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
+
+      const canCancel = new Set(["PENDING_INTERVIEW", "PENDING_CONFIRMATION"]);
+      if (!canCancel.has(app.status)) {
+        throw new BadRequestError("สถานะไม่ถูกต้องสำหรับการไม่อนุมัติ");
+      }
+
+      if (app.departmentId !== owner.departmentId) {
+        throw new ForbiddenError("ไม่ใช่กองของตน");
+      }
+
+      if (!reason || reason.trim().length === 0) {
+        throw new BadRequestError("กรุณาระบุเหตุผล");
+      }
+
+      await tx
+        .update(applicationStatuses)
+        .set({
+          applicationStatus: "CANCEL",
+          statusNote: reason.trim(),
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationStatuses.id, applicationId));
+
+      await tx
+        .update(studentProfiles)
+        .set({ internshipStatus: "CANCEL" })
+        .where(eq(studentProfiles.userId, app.studentUserId));
+
+      await tx.insert(notifications).values({
+        userId: app.studentUserId,
+        title: "การสมัครถูกยกเลิก",
+        message: `ใบสมัครของคุณถูกยกเลิกโดยกองงาน (Application #${applicationId})`,
+        isRead: false,
+      });
+
+      return { applicationStatus: "CANCEL" };
+    });
+  }
 }

@@ -44,8 +44,13 @@ export const HistoryQuery = t.Object({
   includeCanceled: t.Optional(t.Boolean()),
 });
 
+export const CancelByOwnerBody = t.Object({
+  reason: t.String({ minLength: 1 }),
+});
+
 export type UploadDocumentBodyType = typeof UploadDocumentBody.static;
 export type CreateApplicationBodyType = typeof CreateApplicationBody.static;
 export type ApplicationInformationBodyType =
   typeof ApplicationInformationBody.static;
 export type HistoryQueryType = typeof HistoryQuery.static;
+export type CancelByOwnerBodyType = typeof CancelByOwnerBody.static;

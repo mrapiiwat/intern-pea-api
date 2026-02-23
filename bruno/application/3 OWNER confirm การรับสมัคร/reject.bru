@@ -1,0 +1,22 @@
+meta {
+  name: reject
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{url}}/applications/2/interview/reject
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "reason": "ไม่ผ่านการสัมภาษณ์ เนื่องจากคุณสมบัติไม่ตรงกับตำแหน่ง"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
