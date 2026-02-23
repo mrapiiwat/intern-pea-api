@@ -1,0 +1,20 @@
+meta {
+  name: get doc by app_id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/admin/application-documents?applicationStatusId=2
+  body: none
+  auth: inherit
+}
+
+params:query {
+  applicationStatusId: 2
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

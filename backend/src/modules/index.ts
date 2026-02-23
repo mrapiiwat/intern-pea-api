@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { adminApplicationDocuments } from "./admin-application-documents";
 import { application } from "./application";
 import { auth } from "./auth";
 import { department } from "./department";
@@ -20,6 +21,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(favorite)
   .use(institutionTicketRoutes)
   .use(application)
-  .use(notification);
-
+  .use(notification)
+  .use(adminApplicationDocuments);
 export default modules;

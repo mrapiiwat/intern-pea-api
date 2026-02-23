@@ -11,3 +11,6 @@ export const s3Client = new S3Client({
 });
 
 export const BUCKET_NAME = Bun.env.MINIO_BUCKET;
+
+export const MINIO_PUBLIC_ENDPOINT =
+  Bun.env.MINIO_PUBLIC_ENDPOINT ?? Bun.env.MINIO_ENDPOINT;

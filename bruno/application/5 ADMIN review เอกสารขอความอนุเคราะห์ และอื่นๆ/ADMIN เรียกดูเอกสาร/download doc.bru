@@ -1,0 +1,20 @@
+meta {
+  name: download doc
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{url}}/admin/application-documents/file?key=applications/1/1/144fd316-f449-4e2f-894b-4d850a6ea645.pdf
+  body: none
+  auth: inherit
+}
+
+params:query {
+  key: applications/1/1/144fd316-f449-4e2f-894b-4d850a6ea645.pdf
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

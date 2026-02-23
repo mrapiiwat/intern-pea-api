@@ -1,0 +1,20 @@
+meta {
+  name: get doc by search
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{url}}/admin/application-documents?q=applications/1
+  body: none
+  auth: inherit
+}
+
+params:query {
+  q: applications/1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,15 @@
+meta {
+  name: get documents
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/admin/application-documents
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
