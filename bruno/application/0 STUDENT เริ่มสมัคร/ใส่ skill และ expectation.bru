@@ -5,11 +5,19 @@ meta {
 }
 
 post {
-  url: {{url}}/applications/1/information
-  body: none
+  url: {{url}}/applications/2/information
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "skill": "ว่ายน้ำ",
+    "expectation": "ท่าผีเสื้อ"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

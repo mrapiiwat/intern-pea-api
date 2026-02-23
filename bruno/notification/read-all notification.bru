@@ -1,0 +1,15 @@
+meta {
+  name: read-all notification
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{url}}/notifications/read-all
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

@@ -14,6 +14,7 @@ import {
   applicationStatuses,
   internshipPositionMentors,
   internshipPositions,
+  notifications,
   studentProfiles,
   users,
 } from "@/db/schema";
@@ -163,6 +164,7 @@ export class ApplicationService {
           ownerUserId: applicationStatuses.userId,
           status: applicationStatuses.applicationStatus,
           positionId: applicationStatuses.positionId,
+          departmentId: applicationStatuses.departmentId,
         })
         .from(applicationStatuses)
         .where(eq(applicationStatuses.id, applicationId));
@@ -265,6 +267,24 @@ export class ApplicationService {
             .update(studentProfiles)
             .set({ internshipStatus: "INTERVIEW" })
             .where(eq(studentProfiles.userId, userId));
+
+          const owners = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(
+              and(eq(users.roleId, 2), eq(users.departmentId, app.departmentId))
+            );
+
+          if (owners.length > 0) {
+            await tx.insert(notifications).values(
+              owners.map((o) => ({
+                userId: o.id,
+                title: "มีใบสมัครใหม่รอสัมภาษณ์",
+                message: `มีนักศึกษาส่งเอกสารครบแล้ว (Application #${applicationId})`,
+                isRead: false,
+              }))
+            );
+          }
         }
 
         return {
@@ -323,6 +343,13 @@ export class ApplicationService {
         .update(studentProfiles)
         .set({ internshipStatus: "REVIEW" })
         .where(eq(studentProfiles.userId, app.userId));
+
+      await tx.insert(notifications).values({
+        userId: app.userId,
+        title: "อัปเดตสถานะการสมัคร",
+        message: `คุณผ่านขั้นตอนสัมภาษณ์แล้ว (Application #${applicationId})`,
+        isRead: false,
+      });
 
       return { applicationStatus: "PENDING_CONFIRMATION" };
     });
@@ -390,6 +417,13 @@ export class ApplicationService {
           )
           .onConflictDoNothing();
       }
+
+      await tx.insert(notifications).values({
+        userId: app.userId,
+        title: "อัปเดตสถานะการสมัคร",
+        message: `คุณได้รับการตอบรับแล้ว กรุณายื่นเอกสารขอความอนุเคราะห์ (Application #${applicationId})`,
+        isRead: false,
+      });
 
       return {
         applicationStatus: "PENDING_REQUEST",
@@ -461,6 +495,22 @@ export class ApplicationService {
         })
         .where(eq(applicationStatuses.id, applicationId));
 
+      const admins = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.roleId, 1));
+
+      if (admins.length > 0) {
+        await tx.insert(notifications).values(
+          admins.map((a) => ({
+            userId: a.id,
+            title: "มีเอกสารรอตรวจสอบ",
+            message: `มีนักศึกษาส่งเอกสารขอความอนุเคราะห์แล้ว (Application #${applicationId})`,
+            isRead: false,
+          }))
+        );
+      }
+
       return {
         key: s3Key,
         validationStatus: "PENDING",
@@ -517,7 +567,7 @@ export class ApplicationService {
         .update(applicationDocuments)
         .set({
           validationStatus: status,
-          note: note ?? null,
+          note: status === "INVALID" ? (note ?? null) : null,
           updatedAt: new Date(),
         })
         .where(eq(applicationDocuments.id, doc.id));
@@ -534,6 +584,13 @@ export class ApplicationService {
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, applicationId));
+
+          await tx.insert(notifications).values({
+            userId: app.userId,
+            title: "เอกสารถูกตีกลับ",
+            message: `เอกสารถูกตีกลับ กรุณาอัปโหลดใหม่ (Application #${applicationId})`,
+            isRead: false,
+          });
 
           return { applicationStatus: "PENDING_REQUEST" };
         }
@@ -567,6 +624,13 @@ export class ApplicationService {
             .set({ internshipStatus: "ACTIVE" })
             .where(eq(studentProfiles.userId, app.userId));
 
+          await tx.insert(notifications).values({
+            userId: app.userId,
+            title: "การสมัครเสร็จสมบูรณ์",
+            message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครเสร็จสมบูรณ์ (Application #${applicationId})`,
+            isRead: false,
+          });
+
           return { applicationStatus: "COMPLETE" };
         }
       }
@@ -584,6 +648,13 @@ export class ApplicationService {
 
       if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
       if (me.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
+
+      const whereClause = includeCanceled
+        ? eq(applicationStatuses.userId, userId)
+        : and(
+            eq(applicationStatuses.userId, userId),
+            eq(applicationStatuses.applicationStatus, "CANCEL")
+          );
 
       const rows = await tx
         .select({
@@ -604,14 +675,7 @@ export class ApplicationService {
           internshipPositions,
           eq(internshipPositions.id, applicationStatuses.positionId)
         )
-        .where(
-          includeCanceled
-            ? eq(applicationStatuses.userId, userId)
-            : and(
-                eq(applicationStatuses.userId, userId),
-                eq(applicationStatuses.userId, userId)
-              )
-        )
+        .where(whereClause)
         .orderBy(desc(applicationStatuses.internshipRound));
 
       return rows;

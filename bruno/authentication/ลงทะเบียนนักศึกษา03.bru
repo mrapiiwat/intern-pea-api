@@ -6,8 +6,25 @@ meta {
 
 post {
   url: {{url}}/auth/sign-up/intern
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "fname": "กันยา",
+    "lname": "พาสบาย",
+    "phoneNumber": "0524813123",
+    "email": "65111999@dpu.ac.th",
+    "password": "1212312121",
+    "gender": "MALE",
+    "institutionId": 1,
+    "faculty": "business",
+    "major": "be",
+    "totalHours": 150,
+    "startDate": "2025-08-14",
+    "endDate": "2025-10-10"
+  }
 }
 
 settings {
