@@ -229,4 +229,47 @@ export const application = new Elysia({
           "Admin ตรวจเอกสาร (transcript/resume/portfolio/request-letter)",
       },
     }
+  )
+
+  .get(
+    // เส้น student
+    "/history",
+    async ({ session, query, set }) => {
+      const res = await applicationService.getMyHistory(
+        session.userId,
+        query.includeCanceled ?? true
+      );
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [3],
+      query: model.HistoryQuery,
+      detail: {
+        summary: "Student ดูประวัติการสมัครของตัวเอง",
+        description: "นักศึกษาดูได้เฉพาะประวัติการสมัครของตนเอง",
+      },
+    }
+  )
+
+  .get(
+    // เส้น staff
+    "/history/:studentUserId",
+    async ({ session, params: { studentUserId }, query, set }) => {
+      const res = await applicationService.getStudentHistory(
+        session.userId,
+        studentUserId,
+        query.includeCanceled ?? true
+      );
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [1, 2],
+      params: model.studentUserParams,
+      query: model.HistoryQuery,
+      detail: {
+        summary: "Admin/Owner ดูประวัติการสมัครของนักศึกษารายคน",
+      },
+    }
   );

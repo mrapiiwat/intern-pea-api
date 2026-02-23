@@ -343,7 +343,7 @@ export class ApplicationService {
           status: applicationStatuses.applicationStatus,
           departmentId: applicationStatuses.departmentId,
           userId: applicationStatuses.userId,
-          positionId: applicationStatuses.positionId, // ✅ เพิ่ม
+          positionId: applicationStatuses.positionId,
         })
         .from(applicationStatuses)
         .where(eq(applicationStatuses.id, applicationId));
@@ -388,7 +388,7 @@ export class ApplicationService {
               mentorId: m.mentorStaffId,
             }))
           )
-          .onConflictDoNothing(); // กันซ้ำด้วย UNIQUE(application_status_id, mentor_id)
+          .onConflictDoNothing();
       }
 
       return {
@@ -572,6 +572,94 @@ export class ApplicationService {
       }
 
       return { applicationStatus: app.status };
+    });
+  }
+
+  async getMyHistory(userId: string, includeCanceled = true) {
+    return await db.transaction(async (tx) => {
+      const [me] = await tx
+        .select({ id: users.id, roleId: users.roleId })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      if (me.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
+
+      const rows = await tx
+        .select({
+          applicationId: applicationStatuses.id,
+          applicationStatus: applicationStatuses.applicationStatus,
+          internshipRound: applicationStatuses.internshipRound,
+          isActive: applicationStatuses.isActive,
+          createdAt: applicationStatuses.createdAt,
+          updatedAt: applicationStatuses.updatedAt,
+
+          positionId: internshipPositions.id,
+          positionName: internshipPositions.name,
+          positionDepartmentId: internshipPositions.departmentId,
+          positionOfficeId: internshipPositions.officeId,
+        })
+        .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .where(
+          includeCanceled
+            ? eq(applicationStatuses.userId, userId)
+            : and(
+                eq(applicationStatuses.userId, userId),
+                eq(applicationStatuses.userId, userId)
+              )
+        )
+        .orderBy(desc(applicationStatuses.internshipRound));
+
+      return rows;
+    });
+  }
+
+  async getStudentHistory(
+    requesterUserId: string,
+    studentUserId: string,
+    _includeCanceled = true
+  ) {
+    return await db.transaction(async (tx) => {
+      const [req] = await tx
+        .select({
+          id: users.id,
+          roleId: users.roleId,
+          departmentId: users.departmentId,
+        })
+        .from(users)
+        .where(eq(users.id, requesterUserId));
+
+      if (!req) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      if (req.roleId !== 1 && req.roleId !== 2)
+        throw new ForbiddenError("อนุญาตเฉพาะ Admin/Owner");
+
+      const rows = await tx
+        .select({
+          applicationId: applicationStatuses.id,
+          applicationStatus: applicationStatuses.applicationStatus,
+          internshipRound: applicationStatuses.internshipRound,
+          isActive: applicationStatuses.isActive,
+          createdAt: applicationStatuses.createdAt,
+          updatedAt: applicationStatuses.updatedAt,
+
+          positionId: internshipPositions.id,
+          positionName: internshipPositions.name,
+          positionDepartmentId: internshipPositions.departmentId,
+          positionOfficeId: internshipPositions.officeId,
+        })
+        .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .where(eq(applicationStatuses.userId, studentUserId))
+        .orderBy(desc(applicationStatuses.internshipRound));
+
+      return rows;
     });
   }
 

@@ -32,7 +32,16 @@ export const reviewDocByNameParams = t.Object({
   ]),
 });
 
+export const studentUserParams = t.Object({
+  studentUserId: t.String({ minLength: 1 }),
+});
+
+export const HistoryQuery = t.Object({
+  includeCanceled: t.Optional(t.Boolean()),
+});
+
 export type UploadDocumentBodyType = typeof UploadDocumentBody.static;
 export type CreateApplicationBodyType = typeof CreateApplicationBody.static;
 export type ApplicationInformationBodyType =
   typeof ApplicationInformationBody.static;
+export type HistoryQueryType = typeof HistoryQuery.static;
