@@ -1,0 +1,21 @@
+meta {
+  name: get logs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/staff-logs?page=1&limit=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  page: 1
+  limit: 20
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

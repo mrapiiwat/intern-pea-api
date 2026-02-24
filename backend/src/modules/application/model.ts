@@ -51,9 +51,31 @@ export const CancelByOwnerBody = t.Object({
   reason: t.String({ minLength: 1 }),
 });
 
+export const AllStudentsHistoryQuery = t.Object({
+  includeCanceled: t.Optional(t.Boolean({ default: true })),
+
+  page: t.Optional(t.Numeric({ default: 1 })),
+  limit: t.Optional(t.Numeric({ default: 20 })),
+
+  status: t.Optional(
+    t.Union([
+      t.Literal("PENDING_DOCUMENT"),
+      t.Literal("PENDING_INTERVIEW"),
+      t.Literal("PENDING_CONFIRMATION"),
+      t.Literal("PENDING_REQUEST"),
+      t.Literal("PENDING_REVIEW"),
+      t.Literal("COMPLETE"),
+      t.Literal("CANCEL"),
+    ])
+  ),
+  positionId: t.Optional(t.Numeric()),
+  q: t.Optional(t.String()),
+});
+
 export type UploadDocumentBodyType = typeof UploadDocumentBody.static;
 export type CreateApplicationBodyType = typeof CreateApplicationBody.static;
 export type ApplicationInformationBodyType =
   typeof ApplicationInformationBody.static;
 export type HistoryQueryType = typeof HistoryQuery.static;
 export type CancelByOwnerBodyType = typeof CancelByOwnerBody.static;
+export type AllStudentsHistoryQueryType = typeof AllStudentsHistoryQuery.static;

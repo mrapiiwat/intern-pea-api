@@ -1,7 +1,6 @@
 import { relations } from "drizzle-orm/relations";
 import {
   accounts,
-  adminLogs,
   applicationDocuments,
   applicationInformations,
   applicationMentors,
@@ -21,6 +20,7 @@ import {
   projects,
   roles,
   sessions,
+  staffLogs,
   staffProfiles,
   studentProfiles,
   users,
@@ -39,7 +39,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   studentProfiles: many(studentProfiles),
   sessions: many(sessions),
   accounts: many(accounts),
-  adminLogs: many(adminLogs),
+  staffLogs: many(staffLogs),
   notifications: many(notifications),
   checkTimes: many(checkTimes),
   projects: many(projects),
@@ -119,9 +119,9 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   }),
 }));
 
-export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
+export const staffLogsRelations = relations(staffLogs, ({ one }) => ({
   user: one(users, {
-    fields: [adminLogs.adminId],
+    fields: [staffLogs.userId],
     references: [users.id],
   }),
 }));

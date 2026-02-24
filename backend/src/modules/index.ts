@@ -10,6 +10,7 @@ import { notification } from "./notification";
 import { ownerStudents } from "./owner-students";
 import { position } from "./positions";
 import { role } from "./role";
+import { staffLogs } from "./staff-logs";
 import { user } from "./user";
 
 const modules = new Elysia({ prefix: "/api" })
@@ -24,5 +25,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(application)
   .use(notification)
   .use(ApplicationDocuments)
-  .use(ownerStudents);
+  .use(ownerStudents)
+  .use(staffLogs);
 export default modules;

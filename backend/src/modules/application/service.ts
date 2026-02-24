@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ilike, ne, or } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import {
   BadRequestError,
@@ -19,6 +19,10 @@ import {
   users,
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
+import { StaffLogsService } from "@/modules/staff-logs/service";
+import type * as model from "./model";
+
+const staffLogsService = new StaffLogsService();
 
 export class ApplicationService {
   async apply(userId: string, positionId: number) {
@@ -370,6 +374,12 @@ export class ApplicationService {
         isRead: false,
       });
 
+      await staffLogsService.log(
+        tx,
+        ownerUserId,
+        `APPROVE_INTERVIEW applicationId=${applicationId}`
+      );
+
       return { applicationStatus: "PENDING_CONFIRMATION" };
     });
   }
@@ -443,6 +453,12 @@ export class ApplicationService {
         message: `คุณได้รับการตอบรับแล้ว กรุณายื่นเอกสารขอความอนุเคราะห์ (Application #${applicationId})`,
         isRead: false,
       });
+
+      await staffLogsService.log(
+        tx,
+        ownerUserId,
+        `CONFIRM_ACCEPT applicationId=${applicationId}`
+      );
 
       return {
         applicationStatus: "PENDING_REQUEST",
@@ -590,6 +606,12 @@ export class ApplicationService {
         })
         .where(eq(applicationDocuments.id, doc.id));
 
+      await staffLogsService.log(
+        tx,
+        adminUserId,
+        `REVIEW_DOCUMENT applicationId=${applicationId} docTypeId=${docTypeId} status=${status}`
+      );
+
       const isAfterRequestStage =
         app.status === "PENDING_REQUEST" || app.status === "PENDING_REVIEW";
 
@@ -609,6 +631,12 @@ export class ApplicationService {
             message: `เอกสารถูกตีกลับ กรุณาอัปโหลดใหม่ (Application #${applicationId})`,
             isRead: false,
           });
+
+          await staffLogsService.log(
+            tx,
+            adminUserId,
+            `APPLICATION_STATUS_CHANGE applicationId=${applicationId} to=PENDING_REQUEST`
+          );
 
           return { applicationStatus: "PENDING_REQUEST" };
         }
@@ -648,6 +676,12 @@ export class ApplicationService {
             message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครเสร็จสมบูรณ์ (Application #${applicationId})`,
             isRead: false,
           });
+
+          await staffLogsService.log(
+            tx,
+            adminUserId,
+            `APPLICATION_STATUS_CHANGE applicationId=${applicationId} to=COMPLETE`
+          );
 
           return { applicationStatus: "COMPLETE" };
         }
@@ -753,6 +787,124 @@ export class ApplicationService {
         .orderBy(desc(applicationStatuses.internshipRound));
 
       return rows;
+    });
+  }
+
+  async getAllStudentsHistory(
+    requesterUserId: string,
+    query: model.AllStudentsHistoryQueryType
+  ) {
+    return await db.transaction(async (tx) => {
+      const [req] = await tx
+        .select({
+          id: users.id,
+          roleId: users.roleId,
+          departmentId: users.departmentId,
+        })
+        .from(users)
+        .where(eq(users.id, requesterUserId));
+
+      if (!req) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      if (req.roleId !== 1 && req.roleId !== 2)
+        throw new ForbiddenError("อนุญาตเฉพาะ Admin/Owner");
+
+      const page = query.page ?? 1;
+      const limit = query.limit ?? 20;
+      const offset = (page - 1) * limit;
+
+      const conditions = [];
+
+      // owner เห็นเฉพาะของกองตัวเอง
+      if (req.roleId === 2) {
+        if (!req.departmentId) throw new ForbiddenError("ไม่มี department");
+        conditions.push(eq(applicationStatuses.departmentId, req.departmentId));
+      }
+
+      // filter: includeCanceled=false -> ไม่เอา CANCEL
+      if (query.includeCanceled === false) {
+        conditions.push(ne(applicationStatuses.applicationStatus, "CANCEL"));
+      }
+
+      // filter: status
+      if (query.status) {
+        conditions.push(
+          eq(applicationStatuses.applicationStatus, query.status)
+        );
+      }
+
+      // filter: positionId (ถ้ามีส่งมา)
+      if (query.positionId) {
+        conditions.push(eq(applicationStatuses.positionId, query.positionId));
+      }
+
+      // search
+      if (query.q && query.q.trim().length > 0) {
+        const like = `%${query.q.trim()}%`;
+        conditions.push(
+          or(
+            ilike(users.fname, like),
+            ilike(users.lname, like),
+            ilike(users.email, like),
+            ilike(users.phoneNumber, like)
+          )!
+        );
+      }
+
+      const whereClause = conditions.length ? and(...conditions) : undefined;
+
+      const rows = await tx
+        .select({
+          applicationId: applicationStatuses.id,
+          applicationStatus: applicationStatuses.applicationStatus,
+          internshipRound: applicationStatuses.internshipRound,
+          isActive: applicationStatuses.isActive,
+          createdAt: applicationStatuses.createdAt,
+          updatedAt: applicationStatuses.updatedAt,
+
+          studentUserId: users.id,
+          fname: users.fname,
+          lname: users.lname,
+          email: users.email,
+          phoneNumber: users.phoneNumber,
+
+          studentInternshipStatus: studentProfiles.internshipStatus,
+
+          positionId: internshipPositions.id,
+          positionName: internshipPositions.name,
+          departmentId: internshipPositions.departmentId,
+          officeId: internshipPositions.officeId,
+        })
+        .from(applicationStatuses)
+        .leftJoin(users, eq(users.id, applicationStatuses.userId))
+        .leftJoin(studentProfiles, eq(studentProfiles.userId, users.id))
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .where(whereClause)
+        .orderBy(desc(applicationStatuses.updatedAt))
+        .limit(limit)
+        .offset(offset);
+
+      const [totalRow] = await tx
+        .select({ count: count() })
+        .from(applicationStatuses)
+        .leftJoin(users, eq(users.id, applicationStatuses.userId))
+        .where(whereClause);
+
+      const total = Number(totalRow?.count ?? 0);
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: rows,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNextPage: page < totalPages,
+        },
+      };
     });
   }
 
@@ -879,6 +1031,12 @@ export class ApplicationService {
         message: `ใบสมัครของคุณถูกยกเลิกโดยกองงาน (Application #${applicationId})`,
         isRead: false,
       });
+
+      await staffLogsService.log(
+        tx,
+        ownerUserId,
+        `CANCEL_BY_OWNER applicationId=${applicationId}`
+      );
 
       return { applicationStatus: "CANCEL" };
     });

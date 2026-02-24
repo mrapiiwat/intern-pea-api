@@ -234,7 +234,7 @@ export const application = new Elysia({
 
   .get(
     // เส้น student
-    "/history",
+    "/history/me",
     async ({ session, query, set }) => {
       const res = await applicationService.getMyHistory(
         session.userId,
@@ -271,6 +271,27 @@ export const application = new Elysia({
       query: model.HistoryQuery,
       detail: {
         summary: "Admin/Owner ดูประวัติการสมัครของนักศึกษารายคน",
+      },
+    }
+  )
+
+  .get(
+    "/history",
+    async ({ session, query, set }) => {
+      const res = await applicationService.getAllStudentsHistory(
+        session.userId,
+        query
+      );
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [1, 2],
+      query: model.AllStudentsHistoryQuery,
+      detail: {
+        summary: "Admin/Owner ดูประวัติการสมัครของนักศึกษาทั้งหมด",
+        description:
+          "Admin เห็นทั้งหมด, Owner เห็นเฉพาะใบสมัครใน department ของตน (จาก application_statuses.department_id)",
       },
     }
   )

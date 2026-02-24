@@ -10,7 +10,10 @@ import {
   staffProfiles,
   users,
 } from "@/db/schema";
+import { StaffLogsService } from "@/modules/staff-logs/service";
 import type * as model from "./model";
+
+const staffLogsService = new StaffLogsService();
 
 type MentorDTO = {
   staffId: number;
@@ -295,43 +298,51 @@ export class PositionService {
     const { departmentId, officeId } =
       await this.getUserDepartmentAndOffice(userId);
 
-    const [position] = await db
-      .insert(internshipPositions)
-      .values({
-        departmentId,
-        officeId,
+    return await db.transaction(async (tx) => {
+      const [position] = await tx
+        .insert(internshipPositions)
+        .values({
+          departmentId,
+          officeId,
 
-        name: data.name,
-        location: data.location ?? null,
-        positionCount: data.positionCount ?? null,
-        major: data.major ?? null,
+          name: data.name,
+          location: data.location ?? null,
+          positionCount: data.positionCount ?? null,
+          major: data.major ?? null,
 
-        recruitStart: data.recruitStart ?? null,
-        recruitEnd: data.recruitEnd ?? null,
-        applyStart: data.applyStart ?? null,
-        applyEnd: data.applyEnd ?? null,
+          recruitStart: data.recruitStart ?? null,
+          recruitEnd: data.recruitEnd ?? null,
+          applyStart: data.applyStart ?? null,
+          applyEnd: data.applyEnd ?? null,
 
-        resumeRq: data.resumeRq ?? false,
-        portfolioRq: data.portfolioRq ?? false,
+          resumeRq: data.resumeRq ?? false,
+          portfolioRq: data.portfolioRq ?? false,
 
-        jobDetails: data.jobDetails ?? null,
-        requirement: data.requirement ?? null,
-        benefits: data.benefits ?? null,
+          jobDetails: data.jobDetails ?? null,
+          requirement: data.requirement ?? null,
+          benefits: data.benefits ?? null,
 
-        recruitmentStatus: data.recruitmentStatus,
-      })
-      .returning();
+          recruitmentStatus: data.recruitmentStatus,
+        })
+        .returning();
 
-    if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
-      await db.insert(internshipPositionMentors).values(
-        data.mentorStaffIds.map((mentorStaffId) => ({
-          positionId: position.id,
-          mentorStaffId,
-        }))
+      if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
+        await tx.insert(internshipPositionMentors).values(
+          data.mentorStaffIds.map((mentorStaffId) => ({
+            positionId: position.id,
+            mentorStaffId,
+          }))
+        );
+      }
+
+      await staffLogsService.log(
+        tx,
+        userId,
+        `CREATE_POSITION positionId=${position.id}`
       );
-    }
 
-    return position;
+      return position;
+    });
   }
 
   /**
@@ -343,56 +354,64 @@ export class PositionService {
     await this.assertUserExists(userId);
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
 
-    const [updated] = await db
-      .update(internshipPositions)
-      .set({
-        // อัปเดตเฉพาะ field ที่มีจริงในตาราง
-        name: data.name ?? undefined,
-        location: data.location ?? undefined,
-        positionCount: data.positionCount ?? undefined,
-        major: data.major ?? undefined,
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(internshipPositions)
+        .set({
+          // อัปเดตเฉพาะ field ที่มีจริงในตาราง
+          name: data.name ?? undefined,
+          location: data.location ?? undefined,
+          positionCount: data.positionCount ?? undefined,
+          major: data.major ?? undefined,
 
-        recruitStart: data.recruitStart ?? undefined,
-        recruitEnd: data.recruitEnd ?? undefined,
-        applyStart: data.applyStart ?? undefined,
-        applyEnd: data.applyEnd ?? undefined,
+          recruitStart: data.recruitStart ?? undefined,
+          recruitEnd: data.recruitEnd ?? undefined,
+          applyStart: data.applyStart ?? undefined,
+          applyEnd: data.applyEnd ?? undefined,
 
-        resumeRq: data.resumeRq ?? undefined,
-        portfolioRq: data.portfolioRq ?? undefined,
+          resumeRq: data.resumeRq ?? undefined,
+          portfolioRq: data.portfolioRq ?? undefined,
 
-        jobDetails: data.jobDetails ?? undefined,
-        requirement: data.requirement ?? undefined,
-        benefits: data.benefits ?? undefined,
+          jobDetails: data.jobDetails ?? undefined,
+          requirement: data.requirement ?? undefined,
+          benefits: data.benefits ?? undefined,
 
-        recruitmentStatus: data.recruitmentStatus ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(internshipPositions.id, id),
-          eq(internshipPositions.departmentId, departmentId)
+          recruitmentStatus: data.recruitmentStatus ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            eq(internshipPositions.departmentId, departmentId)
+          )
         )
-      )
-      .returning();
+        .returning();
 
-    if (!updated) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
+      if (!updated) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
 
-    if (data.mentorStaffIds) {
-      await db
-        .delete(internshipPositionMentors)
-        .where(eq(internshipPositionMentors.positionId, id));
+      if (data.mentorStaffIds) {
+        await tx
+          .delete(internshipPositionMentors)
+          .where(eq(internshipPositionMentors.positionId, id));
 
-      if (data.mentorStaffIds.length > 0) {
-        await db.insert(internshipPositionMentors).values(
-          data.mentorStaffIds.map((mentorStaffId) => ({
-            positionId: id,
-            mentorStaffId,
-          }))
-        );
+        if (data.mentorStaffIds.length > 0) {
+          await tx.insert(internshipPositionMentors).values(
+            data.mentorStaffIds.map((mentorStaffId) => ({
+              positionId: id,
+              mentorStaffId,
+            }))
+          );
+        }
       }
-    }
 
-    return updated;
+      await staffLogsService.log(
+        tx,
+        userId,
+        `UPDATE_POSITION positionId=${updated.id}`
+      );
+
+      return updated;
+    });
   }
 
   /**
@@ -402,18 +421,26 @@ export class PositionService {
     await this.assertUserExists(userId);
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
 
-    const [deleted] = await db
-      .delete(internshipPositions)
-      .where(
-        and(
-          eq(internshipPositions.id, id),
-          eq(internshipPositions.departmentId, departmentId)
+    return await db.transaction(async (tx) => {
+      const [deleted] = await tx
+        .delete(internshipPositions)
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            eq(internshipPositions.departmentId, departmentId)
+          )
         )
-      )
-      .returning();
+        .returning();
 
-    if (!deleted) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
+      if (!deleted) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
 
-    return { success: true, message: "ลบตำแหน่งเรียบร้อยแล้ว" };
+      await staffLogsService.log(
+        tx,
+        userId,
+        `DELETE_POSITION positionId=${id}`
+      );
+
+      return { success: true, message: "ลบตำแหน่งเรียบร้อยแล้ว" };
+    });
   }
 }

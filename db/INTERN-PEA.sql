@@ -222,13 +222,15 @@ CREATE TABLE public.accounts (
   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE public.admin_logs (
+CREATE TABLE public.staff_logs (
   id SERIAL PRIMARY KEY,
-  admin_id VARCHAR(50) NOT NULL,
+  user_id VARCHAR(50) NOT NULL,
   action TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (admin_id) REFERENCES public.users(id)
+  CONSTRAINT staff_logs_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES public.users(id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE public.check_times (

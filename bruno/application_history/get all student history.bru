@@ -1,0 +1,16 @@
+meta {
+  name: get all student history
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/applications/history
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

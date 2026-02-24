@@ -395,19 +395,19 @@ export const accounts = pgTable(
   ]
 );
 
-export const adminLogs = pgTable(
-  "admin_logs",
+export const staffLogs = pgTable(
+  "staff_logs",
   {
-    id: serial().primaryKey().notNull(),
-    adminId: varchar("admin_id", { length: 50 }).notNull(),
-    action: text(),
+    id: serial("id").primaryKey(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    action: text("action"),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
   (table) => [
     foreignKey({
-      columns: [table.adminId],
+      columns: [table.userId],
       foreignColumns: [users.id],
       name: "admin_logs_admin_id_fkey",
     }),
