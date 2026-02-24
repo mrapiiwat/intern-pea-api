@@ -31,10 +31,13 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
     }
   )
 
-  .get("/sign-in/keycloak", async ({ set }) => {
-    const response = await authService.loginWithKeycloak();
+  .get("/sign-in/keycloak", async ({ request, redirect }) => {
+    const response = await authService.loginWithKeycloak(request.headers);
 
-    set.status = 200;
+    if (response.url) {
+      return redirect(response.url);
+    }
+
     return response;
   })
 
