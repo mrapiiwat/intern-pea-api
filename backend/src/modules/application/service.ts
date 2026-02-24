@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, count, desc, eq, ilike, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, ne, or } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import {
   BadRequestError,
@@ -12,9 +12,11 @@ import {
   applicationInformations,
   applicationMentors,
   applicationStatuses,
+  institutions,
   internshipPositionMentors,
   internshipPositions,
   notifications,
+  staffProfiles,
   studentProfiles,
   users,
 } from "@/db/schema";
@@ -858,6 +860,7 @@ export class ApplicationService {
           applicationStatus: applicationStatuses.applicationStatus,
           internshipRound: applicationStatuses.internshipRound,
           isActive: applicationStatuses.isActive,
+          statusNote: applicationStatuses.statusNote,
           createdAt: applicationStatuses.createdAt,
           updatedAt: applicationStatuses.updatedAt,
 
@@ -866,8 +869,25 @@ export class ApplicationService {
           lname: users.lname,
           email: users.email,
           phoneNumber: users.phoneNumber,
+          gender: users.gender,
 
           studentInternshipStatus: studentProfiles.internshipStatus,
+          institutionId: studentProfiles.institutionId,
+          faculty: studentProfiles.faculty,
+          major: studentProfiles.major,
+          profileHours: studentProfiles.hours,
+          profileStartDate: studentProfiles.startDate,
+          profileEndDate: studentProfiles.endDate,
+          studentNote: studentProfiles.studentNote,
+
+          institutionName: institutions.name,
+          institutionType: institutions.institutionsType,
+
+          infoSkill: applicationInformations.skill,
+          infoExpectation: applicationInformations.expectation,
+          infoStartDate: applicationInformations.startDate,
+          infoEndDate: applicationInformations.endDate,
+          infoHours: applicationInformations.hours,
 
           positionId: internshipPositions.id,
           positionName: internshipPositions.name,
@@ -878,6 +898,17 @@ export class ApplicationService {
         .leftJoin(users, eq(users.id, applicationStatuses.userId))
         .leftJoin(studentProfiles, eq(studentProfiles.userId, users.id))
         .leftJoin(
+          institutions,
+          eq(institutions.id, studentProfiles.institutionId)
+        )
+        .leftJoin(
+          applicationInformations,
+          eq(
+            applicationInformations.applicationStatusId,
+            applicationStatuses.id
+          )
+        )
+        .leftJoin(
           internshipPositions,
           eq(internshipPositions.id, applicationStatuses.positionId)
         )
@@ -885,6 +916,99 @@ export class ApplicationService {
         .orderBy(desc(applicationStatuses.updatedAt))
         .limit(limit)
         .offset(offset);
+
+      // Fetch documents for each application
+      const appIds = rows.map((r) => r.applicationId);
+      const allDocs = appIds.length
+        ? await tx
+            .select({
+              applicationStatusId: applicationDocuments.applicationStatusId,
+              docTypeId: applicationDocuments.docTypeId,
+              docFile: applicationDocuments.docFile,
+              validationStatus: applicationDocuments.validationStatus,
+            })
+            .from(applicationDocuments)
+            .where(inArray(applicationDocuments.applicationStatusId, appIds))
+        : [];
+
+      // Fetch mentors for each application
+      const allMentors = appIds.length
+        ? await tx
+            .select({
+              applicationStatusId: applicationMentors.applicationStatusId,
+              mentorStaffId: applicationMentors.mentorId,
+              mentorFname: users.fname,
+              mentorLname: users.lname,
+              mentorEmail: users.email,
+              mentorPhone: users.phoneNumber,
+            })
+            .from(applicationMentors)
+            .leftJoin(
+              staffProfiles,
+              eq(staffProfiles.id, applicationMentors.mentorId)
+            )
+            .leftJoin(users, eq(users.id, staffProfiles.userId))
+            .where(inArray(applicationMentors.applicationStatusId, appIds))
+        : [];
+
+      // Build docs/mentors maps
+      const docsMap = new Map<number, typeof allDocs>();
+      for (const doc of allDocs) {
+        const arr = docsMap.get(doc.applicationStatusId) ?? [];
+        arr.push(doc);
+        docsMap.set(doc.applicationStatusId, arr);
+      }
+      const mentorsMap = new Map<number, typeof allMentors>();
+      for (const m of allMentors) {
+        const arr = mentorsMap.get(m.applicationStatusId) ?? [];
+        arr.push(m);
+        mentorsMap.set(m.applicationStatusId, arr);
+      }
+
+      const data = rows.map((row) => ({
+        applicationId: row.applicationId,
+        applicationStatus: row.applicationStatus,
+        internshipRound: row.internshipRound,
+        isActive: row.isActive,
+        statusNote: row.statusNote,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        studentUserId: row.studentUserId,
+        fname: row.fname,
+        lname: row.lname,
+        email: row.email,
+        phoneNumber: row.phoneNumber,
+        gender: row.gender,
+        studentInternshipStatus: row.studentInternshipStatus,
+        institutionName: row.institutionName,
+        institutionType: row.institutionType,
+        faculty: row.faculty,
+        major: row.major,
+        profileHours: row.profileHours,
+        profileStartDate: row.profileStartDate,
+        profileEndDate: row.profileEndDate,
+        studentNote: row.studentNote,
+        infoSkill: row.infoSkill,
+        infoExpectation: row.infoExpectation,
+        infoStartDate: row.infoStartDate,
+        infoEndDate: row.infoEndDate,
+        infoHours: row.infoHours,
+        positionId: row.positionId,
+        positionName: row.positionName,
+        departmentId: row.departmentId,
+        officeId: row.officeId,
+        documents: (docsMap.get(row.applicationId) ?? []).map((d) => ({
+          docTypeId: d.docTypeId,
+          docFile: d.docFile,
+          validationStatus: d.validationStatus,
+        })),
+        mentors: (mentorsMap.get(row.applicationId) ?? []).map((m) => ({
+          fname: m.mentorFname,
+          lname: m.mentorLname,
+          email: m.mentorEmail,
+          phone: m.mentorPhone,
+        })),
+      }));
 
       const [totalRow] = await tx
         .select({ count: count() })
@@ -896,7 +1020,7 @@ export class ApplicationService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data: rows,
+        data,
         meta: {
           total,
           page,
