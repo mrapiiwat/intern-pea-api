@@ -39,7 +39,10 @@ export class AuthService {
           faculty: data.faculty ?? null,
           major: data.major,
           studentNote: data.studentNote ?? null,
-          hours: String(data.totalHours),
+          hours:
+            data.totalHours === undefined || data.totalHours === null
+              ? null
+              : String(data.totalHours),
           internshipStatus: "IDLE",
           isActive: true,
           startDate: data.startDate || null,
