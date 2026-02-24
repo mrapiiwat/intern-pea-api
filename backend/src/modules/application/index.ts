@@ -152,7 +152,7 @@ export const application = new Elysia({
       return res;
     },
     {
-      role: [2],
+      role: [1, 2],
       params: model.params,
       detail: {
         summary: "Owner อนุมัติผ่านสัมภาษณ์",
@@ -171,7 +171,7 @@ export const application = new Elysia({
       return res;
     },
     {
-      role: [2],
+      role: [1, 2],
       params: model.params,
       detail: {
         summary: "Owner ยืนยันรับนักศึกษา",
@@ -307,7 +307,7 @@ export const application = new Elysia({
       return res;
     },
     {
-      role: [2],
+      role: [1, 2],
       params: model.params,
       body: model.CancelByOwnerBody,
       detail: {

@@ -17,6 +17,7 @@ export const ApplicationInformationBody = t.Object({
   expectation: t.String({ minLength: 1 }),
   startDate: t.Date(),
   endDate: t.Date(),
+  hours: t.Numeric(),
 });
 
 export const UploadDocumentBody = t.Object({

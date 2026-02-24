@@ -1,0 +1,22 @@
+meta {
+  name: complete
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{url}}/owner/students/W35ExgwEK7Sv7q6r5UKjK2yDARSQsbzv/internship-status
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "status": "COMPLETE"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -7,6 +7,7 @@ import { favorite } from "./favorite";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
 import { notification } from "./notification";
+import { ownerStudents } from "./owner-students";
 import { position } from "./positions";
 import { role } from "./role";
 import { user } from "./user";
@@ -22,5 +23,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(institutionTicketRoutes)
   .use(application)
   .use(notification)
-  .use(ApplicationDocuments);
+  .use(ApplicationDocuments)
+  .use(ownerStudents);
 export default modules;

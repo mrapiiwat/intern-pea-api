@@ -1,0 +1,23 @@
+meta {
+  name: cancel
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{url}}/owner/students/W35ExgwEK7Sv7q6r5UKjK2yDARSQsbzv/internship-status
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "status": "CANCEL",
+    "reason": "นักศึกษาขอถอนตัวเนื่องจากตารางเรียนชนกับช่วงฝึกงาน"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

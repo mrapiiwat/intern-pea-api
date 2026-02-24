@@ -165,12 +165,12 @@ CREATE TABLE public.student_profiles (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL UNIQUE,
   image VARCHAR(255) UNIQUE,
-  hours DECIMAL(10,2),
+  hours DECIMAL(10,2), -- not use now
   institution_id INT NOT NULL,
   faculty VARCHAR,
   major VARCHAR,
-  start_date TIMESTAMP,
-  end_date TIMESTAMP,
+  start_date TIMESTAMP, -- not use now
+  end_date TIMESTAMP, -- not use now
   is_active BOOLEAN,
   student_note TEXT,
   internship_status public.internship_status_enum NOT NULL,
@@ -373,6 +373,7 @@ CREATE TABLE public.application_informations (
   expectation TEXT,
   start_date TIMESTAMP,
   end_date TIMESTAMP,
+  hours DECIMAL(10,2),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

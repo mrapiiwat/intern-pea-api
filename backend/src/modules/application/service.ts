@@ -24,15 +24,11 @@ export class ApplicationService {
   async apply(userId: string, positionId: number) {
     return await db.transaction(async (tx) => {
       const [user] = await tx
-        .select({
-          id: users.id,
-          roleId: users.roleId,
-        })
+        .select({ id: users.id })
         .from(users)
         .where(eq(users.id, userId));
 
       if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
-      if (user.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
 
       const [sp] = await tx
         .select({ internshipStatus: studentProfiles.internshipStatus })
@@ -75,16 +71,21 @@ export class ApplicationService {
   async submitInformation(
     userId: string,
     positionId: number,
-    data: { skill: string; expectation: string; startDate: Date; endDate: Date }
+    data: {
+      skill: string;
+      expectation: string;
+      startDate: Date;
+      endDate: Date;
+      hours: number;
+    }
   ) {
     return await db.transaction(async (tx) => {
       const [user] = await tx
-        .select({ id: users.id, roleId: users.roleId })
+        .select({ id: users.id })
         .from(users)
         .where(eq(users.id, userId));
 
       if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
-      if (user.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
 
       const [sp] = await tx
         .select({ internshipStatus: studentProfiles.internshipStatus })
@@ -128,6 +129,10 @@ export class ApplicationService {
         throw new BadRequestError("endDate ต้องมากกว่าหรือเท่ากับ startDate");
       }
 
+      if (data.hours === undefined || data.hours === null) {
+        throw new BadRequestError("กรุณาระบุ hours");
+      }
+
       const [app] = await tx
         .insert(applicationStatuses)
         .values({
@@ -150,6 +155,7 @@ export class ApplicationService {
         expectation: data.expectation,
         startDate: data.startDate,
         endDate: data.endDate,
+        hours: String(data.hours),
       });
 
       await tx
@@ -540,13 +546,12 @@ export class ApplicationService {
     note?: string
   ) {
     return await db.transaction(async (tx) => {
-      const [admin] = await tx
-        .select({ roleId: users.roleId })
+      const [adminUser] = await tx
+        .select({ id: users.id })
         .from(users)
         .where(eq(users.id, adminUserId));
 
-      if (!admin || admin.roleId !== 1)
-        throw new ForbiddenError("อนุญาตเฉพาะผู้ดูแลระบบ");
+      if (!adminUser) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
 
       const [app] = await tx
         .select({
@@ -655,12 +660,11 @@ export class ApplicationService {
   async getMyHistory(userId: string, includeCanceled = true) {
     return await db.transaction(async (tx) => {
       const [me] = await tx
-        .select({ id: users.id, roleId: users.roleId })
+        .select({ id: users.id })
         .from(users)
         .where(eq(users.id, userId));
 
       if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
-      if (me.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
 
       const whereClause = includeCanceled
         ? eq(applicationStatuses.userId, userId)
@@ -704,15 +708,27 @@ export class ApplicationService {
       const [req] = await tx
         .select({
           id: users.id,
-          roleId: users.roleId,
           departmentId: users.departmentId,
         })
         .from(users)
         .where(eq(users.id, requesterUserId));
 
       if (!req) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
-      if (req.roleId !== 1 && req.roleId !== 2)
-        throw new ForbiddenError("อนุญาตเฉพาะ Admin/Owner");
+
+      const [student] = await tx
+        .select({ departmentId: users.departmentId })
+        .from(users)
+        .where(eq(users.id, studentUserId));
+
+      if (!student) throw new NotFoundError("ไม่พบนักศึกษา");
+
+      if (
+        req.departmentId &&
+        student.departmentId &&
+        req.departmentId !== student.departmentId
+      ) {
+        throw new ForbiddenError("ไม่ใช่กองของตน");
+      }
 
       const rows = await tx
         .select({
@@ -752,12 +768,11 @@ export class ApplicationService {
   async cancelByStudent(userId: string, applicationId: number) {
     return await db.transaction(async (tx) => {
       const [me] = await tx
-        .select({ id: users.id, roleId: users.roleId })
+        .select({ id: users.id })
         .from(users)
         .where(eq(users.id, userId));
 
       if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
-      if (me.roleId !== 3) throw new ForbiddenError("อนุญาตเฉพาะนักศึกษา");
 
       const [app] = await tx
         .select({
@@ -796,7 +811,6 @@ export class ApplicationService {
         })
         .where(eq(applicationStatuses.id, applicationId));
 
-      // ทำให้นักศึกษากลับไปสมัครรอบใหม่ได้
       await tx
         .update(studentProfiles)
         .set({ internshipStatus: "CANCEL" })
@@ -813,12 +827,11 @@ export class ApplicationService {
   ) {
     return await db.transaction(async (tx) => {
       const [owner] = await tx
-        .select({ roleId: users.roleId, departmentId: users.departmentId })
+        .select({ id: users.id, departmentId: users.departmentId })
         .from(users)
         .where(eq(users.id, ownerUserId));
 
       if (!owner) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
-      if (owner.roleId !== 2) throw new ForbiddenError("อนุญาตเฉพาะ Owner");
       if (!owner.departmentId) throw new ForbiddenError("ไม่มีสิทธิ์อนุมัติ");
 
       const [app] = await tx

@@ -652,6 +652,7 @@ export const applicationInformations = pgTable(
     expectation: text(),
     startDate: timestamp("start_date"),
     endDate: timestamp("end_date"),
+    hours: numeric("hours", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
