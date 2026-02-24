@@ -8,6 +8,8 @@ import * as schema from "@/db/schema";
 type user = InferSelectModel<typeof schema.users>;
 type session = InferSelectModel<typeof schema.sessions>;
 
+const tempStaffData = new Map<string, string>();
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -43,6 +45,13 @@ export const auth = betterAuth({
             "offline_access",
           ],
           mapProfileToUser: async (profile) => {
+            const employeeId =
+              profile.employee_id || profile.preferred_username;
+
+            if (employeeId && profile.email) {
+              tempStaffData.set(profile.email, employeeId);
+            }
+
             return {
               roleId: 2,
               departmentId: 1,
@@ -64,6 +73,29 @@ export const auth = betterAuth({
       ],
     }),
   ],
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const employeeId = tempStaffData.get(user.email);
+
+          if (employeeId) {
+            try {
+              await db.insert(schema.staffProfiles).values({
+                userId: user.id,
+                employeeId: employeeId,
+              });
+            } catch (error) {
+              console.error("Failed to create staff_profile:", error);
+            } finally {
+              tempStaffData.delete(user.email);
+            }
+          }
+        },
+      },
+    },
+  },
 
   user: {
     additionalFields: {
