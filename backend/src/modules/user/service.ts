@@ -1,6 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { studentProfiles, users } from "@/db/schema";
+import {
+  applicationInformations,
+  applicationStatuses,
+  studentProfiles,
+  users,
+} from "@/db/schema";
 
 const ROLE_STAFF = 2;
 const ROLE_INTERN = 3;
@@ -19,11 +24,63 @@ export class UserService {
       throw new Error("User not found");
     }
 
-    if (user.roleId === 3) {
+    if (user.roleId === ROLE_INTERN) {
+      const [latestApp] = await db
+        .select({
+          applicationStatusId: applicationStatuses.id,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.userId, userId))
+        .orderBy(desc(applicationStatuses.internshipRound))
+        .limit(1);
+
+      let latestInfo: {
+        startDate: Date | string | null;
+        endDate: Date | string | null;
+        hours: string | null;
+      } | null = null;
+
+      if (latestApp?.applicationStatusId) {
+        const [info] = await db
+          .select({
+            startDate: applicationInformations.startDate,
+            endDate: applicationInformations.endDate,
+            hours: applicationInformations.hours,
+          })
+          .from(applicationInformations)
+          .where(
+            eq(
+              applicationInformations.applicationStatusId,
+              latestApp.applicationStatusId
+            )
+          )
+          .limit(1);
+
+        if (info) latestInfo = info;
+      }
+
       const { studentProfiles, staffProfiles, ...userData } = user;
+
+      const profile = Array.isArray(studentProfiles)
+        ? studentProfiles[0]
+        : studentProfiles;
+
+      const mergedProfile = profile
+        ? {
+            ...profile,
+            hours: latestInfo?.hours ?? null,
+            startDate: latestInfo?.startDate ?? null,
+            endDate: latestInfo?.endDate ?? null,
+          }
+        : {
+            hours: latestInfo?.hours ?? null,
+            startDate: latestInfo?.startDate ?? null,
+            endDate: latestInfo?.endDate ?? null,
+          };
+
       return {
         ...userData,
-        profile: studentProfiles,
+        profile: mergedProfile,
       };
     }
 
@@ -37,18 +94,13 @@ export class UserService {
   async getStaff(departmentId?: number) {
     const staffUsers = await db.query.users.findMany({
       where: departmentId
-        ? and(
-            eq(users.roleId, ROLE_STAFF),
-            eq(users.departmentId, departmentId)
-          )
+        ? and(eq(users.roleId, ROLE_STAFF), eq(users.departmentId, departmentId))
         : eq(users.roleId, ROLE_STAFF),
       with: {
         staffProfiles: true,
       },
     });
 
-    // Return staffProfileId at top level for frontend mentorStaffIds
-    // staffProfiles is array (one-to-many), get first element
     return staffUsers.map((user) => {
       const { staffProfiles, ...userData } = user;
       const profile = Array.isArray(staffProfiles)
@@ -80,8 +132,7 @@ export class UserService {
     if (data.fname !== undefined) updateData.fname = data.fname;
     if (data.lname !== undefined) updateData.lname = data.lname;
     if (data.email !== undefined) updateData.email = data.email;
-    if (data.phoneNumber !== undefined)
-      updateData.phoneNumber = data.phoneNumber;
+    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
 
     const [updated] = await db
       .update(users)
@@ -111,8 +162,7 @@ export class UserService {
     if (data.hours !== undefined) updateData.hours = String(data.hours);
     if (data.faculty !== undefined) updateData.faculty = data.faculty;
     if (data.major !== undefined) updateData.major = data.major;
-    if (data.studentNote !== undefined)
-      updateData.studentNote = data.studentNote;
+    if (data.studentNote !== undefined) updateData.studentNote = data.studentNote;
     if (data.startDate !== undefined) updateData.startDate = data.startDate;
     if (data.endDate !== undefined) updateData.endDate = data.endDate;
 
