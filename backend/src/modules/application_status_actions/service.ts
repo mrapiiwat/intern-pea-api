@@ -44,6 +44,15 @@ export class ApplicationStatusActionService {
     const limit = query?.limit ?? 50;
     const offset = query?.offset ?? 0;
 
+    const conditions = [
+      eq(applicationStatusActions.applicationStatusId, applicationStatusId),
+    ];
+
+    // filter ราย action id
+    if (query?.actionId) {
+      conditions.push(eq(applicationStatusActions.id, query.actionId));
+    }
+
     // หาใบสมัคร
     const [app] = await db
       .select({

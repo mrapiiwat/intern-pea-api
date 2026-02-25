@@ -137,7 +137,11 @@ export const auth = betterAuth({
 
   baseURL: Bun.env.BETTER_AUTH_BASE_URL,
   secret: Bun.env.BETTER_AUTH_SECRET,
-  trustedOrigins: ["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3000"],
+  trustedOrigins: [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:3000",
+  ],
 });
 
 export type Auth = typeof auth;
