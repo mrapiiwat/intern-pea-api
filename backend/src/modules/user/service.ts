@@ -94,7 +94,10 @@ export class UserService {
   async getStaff(departmentId?: number) {
     const staffUsers = await db.query.users.findMany({
       where: departmentId
-        ? and(eq(users.roleId, ROLE_STAFF), eq(users.departmentId, departmentId))
+        ? and(
+            eq(users.roleId, ROLE_STAFF),
+            eq(users.departmentId, departmentId)
+          )
         : eq(users.roleId, ROLE_STAFF),
       with: {
         staffProfiles: true,
@@ -132,7 +135,8 @@ export class UserService {
     if (data.fname !== undefined) updateData.fname = data.fname;
     if (data.lname !== undefined) updateData.lname = data.lname;
     if (data.email !== undefined) updateData.email = data.email;
-    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+    if (data.phoneNumber !== undefined)
+      updateData.phoneNumber = data.phoneNumber;
 
     const [updated] = await db
       .update(users)
@@ -162,7 +166,8 @@ export class UserService {
     if (data.hours !== undefined) updateData.hours = String(data.hours);
     if (data.faculty !== undefined) updateData.faculty = data.faculty;
     if (data.major !== undefined) updateData.major = data.major;
-    if (data.studentNote !== undefined) updateData.studentNote = data.studentNote;
+    if (data.studentNote !== undefined)
+      updateData.studentNote = data.studentNote;
     if (data.startDate !== undefined) updateData.startDate = data.startDate;
     if (data.endDate !== undefined) updateData.endDate = data.endDate;
 
