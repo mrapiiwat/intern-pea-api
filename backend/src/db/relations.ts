@@ -149,7 +149,7 @@ export const leaveRequestsRelations = relations(leaveRequests, ({ one }) => ({
     relationName: "leaveRequests_userId_users_id",
   }),
   user_approverId: one(users, {
-    fields: [leaveRequests.approverId],
+    fields: [leaveRequests.approvedBy],
     references: [users.id],
     relationName: "leaveRequests_approverId_users_id",
   }),

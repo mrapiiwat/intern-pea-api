@@ -471,7 +471,8 @@ export const leaveRequests = pgTable(
     reason: text(),
     file: varchar({ length: 255 }),
     status: leaveStatusEnum().notNull(),
-    approverId: varchar("approver_id", { length: 50 }),
+    approvedBy: varchar("approved_by", { length: 50 }),
+    approverNote: text("approver_note"),
     approvedAt: timestamp("approved_at", { mode: "string" }),
   },
   (table) => [
@@ -481,9 +482,9 @@ export const leaveRequests = pgTable(
       name: "leave_requests_user_id_fkey",
     }),
     foreignKey({
-      columns: [table.approverId],
+      columns: [table.approvedBy],
       foreignColumns: [users.id],
-      name: "leave_requests_approver_id_fkey",
+      name: "leave_requests_approved_by_fkey",
     }),
   ]
 );

@@ -1235,7 +1235,7 @@ export class ApplicationService {
 
       await tx
         .update(studentProfiles)
-        .set({ internshipStatus: "CANCEL" })
+        .set({ internshipStatus: "IDLE" })
         .where(eq(studentProfiles.userId, app.studentUserId));
 
       await tx.insert(notifications).values({

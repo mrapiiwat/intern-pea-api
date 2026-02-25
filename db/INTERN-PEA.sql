@@ -256,11 +256,13 @@ CREATE TABLE public.leave_requests (
   reason TEXT,
   file VARCHAR(255),
   status public.leave_status_enum NOT NULL,
-  approver_id VARCHAR(50),
+  approved_by VARCHAR(50),
+  approver_note TEXT,
   approved_at TIMESTAMP,
 
+
   FOREIGN KEY (user_id) REFERENCES public.users(id),
-  FOREIGN KEY (approver_id) REFERENCES public.users(id)
+  FOREIGN KEY (approved_by) REFERENCES public.users(id)
 );
 
 CREATE TABLE public.notifications (
