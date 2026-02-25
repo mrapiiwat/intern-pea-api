@@ -111,7 +111,7 @@ export class AuthService {
       headers: headers,
       body: {
         provider: "keycloak",
-        callbackURL: "http://localhost:8080/api/user/profile",
+        callbackURL: "http://localhost:8080/docs", // callback
       },
       asResponse: true,
     });
