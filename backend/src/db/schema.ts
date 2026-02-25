@@ -643,6 +643,34 @@ export const applicationStatuses = pgTable(
   ]
 );
 
+export const applicationStatusActions = pgTable(
+  "application_status_actions",
+  {
+    id: serial().primaryKey().notNull(),
+    applicationStatusId: integer("application_status_id").notNull(),
+    actionBy: varchar("action_by", { length: 50 }).notNull(),
+    oldStatus: varchar("old_status", { length: 50 }),
+    newStatus: varchar("new_status", { length: 50 }).notNull(),
+
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.applicationStatusId],
+      foreignColumns: [applicationStatuses.id],
+      name: "application_status_actions_application_status_id_fkey",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.actionBy],
+      foreignColumns: [users.id],
+      name: "application_status_actions_action_by_fkey",
+    }).onDelete("restrict"),
+  ]
+);
+
 export const applicationInformations = pgTable(
   "application_informations",
   {

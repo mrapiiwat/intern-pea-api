@@ -368,6 +368,32 @@ CREATE TABLE public.application_statuses (
   FOREIGN KEY (position_id) REFERENCES public.internship_positions(id)
 );
 
+CREATE TABLE public.application_status_actions (
+  id SERIAL PRIMARY KEY,
+  application_status_id INT NOT NULL,
+  action_by VARCHAR(50) NOT NULL,
+
+  old_status VARCHAR(50),
+  new_status VARCHAR(50) NOT NULL,
+
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT app_status_actions_application_status_id_fkey
+    FOREIGN KEY (application_status_id)
+    REFERENCES public.application_statuses(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT app_status_actions_action_by_fkey
+    FOREIGN KEY (action_by)
+    REFERENCES public.users(id)
+    ON DELETE RESTRICT
+);
+-- indexes 
+CREATE INDEX idx_app_status_actions_app_status_id_created_at
+  ON public.application_status_actions (application_status_id, created_at DESC);
+CREATE INDEX idx_app_status_actions_action_by_created_at
+  ON public.application_status_actions (action_by, created_at DESC);
+
 CREATE TABLE public.application_informations (
   id SERIAL PRIMARY KEY,
   application_status_id INT NOT NULL UNIQUE,

@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { application } from "./application";
+import { applicationStatusActionsModule } from "./application_status_actions";
 import { ApplicationDocuments } from "./application-documents";
 import { auth } from "./auth";
 import { department } from "./department";
@@ -26,5 +27,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(notification)
   .use(ApplicationDocuments)
   .use(ownerStudents)
-  .use(staffLogs);
+  .use(staffLogs)
+  .use(applicationStatusActionsModule);
 export default modules;

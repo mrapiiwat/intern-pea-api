@@ -11,6 +11,7 @@ import {
   applicationDocuments,
   applicationInformations,
   applicationMentors,
+  applicationStatusActions,
   applicationStatuses,
   institutions,
   internshipPositionMentors,
@@ -25,8 +26,24 @@ import { StaffLogsService } from "@/modules/staff-logs/service";
 import type * as model from "./model";
 
 const staffLogsService = new StaffLogsService();
+type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export class ApplicationService {
+  private async logAppStatusAction(
+    tx: DbTx,
+    applicationStatusId: number,
+    actionBy: string,
+    oldStatus: string | null,
+    newStatus: string
+  ) {
+    await tx.insert(applicationStatusActions).values({
+      applicationStatusId,
+      actionBy,
+      oldStatus,
+      newStatus,
+    });
+  }
+
   async apply(userId: string, positionId: number) {
     return await db.transaction(async (tx) => {
       const [user] = await tx
@@ -154,6 +171,14 @@ export class ApplicationService {
           id: applicationStatuses.id,
           applicationStatus: applicationStatuses.applicationStatus,
         });
+
+      await this.logAppStatusAction(
+        tx,
+        app.id,
+        userId,
+        null,
+        "PENDING_DOCUMENT"
+      );
 
       await tx.insert(applicationInformations).values({
         applicationStatusId: app.id,
@@ -288,6 +313,14 @@ export class ApplicationService {
             })
             .where(eq(applicationStatuses.id, applicationId));
 
+          await this.logAppStatusAction(
+            tx,
+            applicationId,
+            userId,
+            "PENDING_DOCUMENT",
+            "PENDING_INTERVIEW"
+          );
+
           await tx
             .update(studentProfiles)
             .set({ internshipStatus: "INTERVIEW" })
@@ -364,6 +397,14 @@ export class ApplicationService {
         })
         .where(eq(applicationStatuses.id, applicationId));
 
+      await this.logAppStatusAction(
+        tx,
+        applicationId,
+        ownerUserId,
+        "PENDING_INTERVIEW",
+        "PENDING_CONFIRMATION"
+      );
+
       await tx
         .update(studentProfiles)
         .set({ internshipStatus: "REVIEW" })
@@ -419,6 +460,14 @@ export class ApplicationService {
           updatedAt: new Date(),
         })
         .where(eq(applicationStatuses.id, applicationId));
+
+      await this.logAppStatusAction(
+        tx,
+        applicationId,
+        ownerUserId,
+        "PENDING_CONFIRMATION",
+        "PENDING_REQUEST"
+      );
 
       await tx
         .update(studentProfiles)
@@ -532,6 +581,14 @@ export class ApplicationService {
         })
         .where(eq(applicationStatuses.id, applicationId));
 
+      await this.logAppStatusAction(
+        tx,
+        applicationId,
+        userId,
+        "PENDING_REQUEST",
+        "PENDING_REVIEW"
+      );
+
       const admins = await tx
         .select({ id: users.id })
         .from(users)
@@ -627,6 +684,14 @@ export class ApplicationService {
             })
             .where(eq(applicationStatuses.id, applicationId));
 
+          await this.logAppStatusAction(
+            tx,
+            applicationId,
+            adminUserId,
+            app.status,
+            "PENDING_REQUEST"
+          );
+
           await tx.insert(notifications).values({
             userId: app.userId,
             title: "เอกสารถูกตีกลับ",
@@ -666,6 +731,14 @@ export class ApplicationService {
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, applicationId));
+
+          await this.logAppStatusAction(
+            tx,
+            applicationId,
+            adminUserId,
+            app.status,
+            "COMPLETE"
+          );
 
           await tx
             .update(studentProfiles)
@@ -1087,6 +1160,14 @@ export class ApplicationService {
         })
         .where(eq(applicationStatuses.id, applicationId));
 
+      await this.logAppStatusAction(
+        tx,
+        applicationId,
+        userId,
+        "PENDING_DOCUMENT",
+        "CANCEL"
+      );
+
       await tx
         .update(studentProfiles)
         .set({ internshipStatus: "CANCEL" })
@@ -1143,6 +1224,14 @@ export class ApplicationService {
           updatedAt: new Date(),
         })
         .where(eq(applicationStatuses.id, applicationId));
+
+      await this.logAppStatusAction(
+        tx,
+        applicationId,
+        ownerUserId,
+        app.status,
+        "CANCEL"
+      );
 
       await tx
         .update(studentProfiles)

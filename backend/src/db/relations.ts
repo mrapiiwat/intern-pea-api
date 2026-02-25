@@ -4,6 +4,7 @@ import {
   applicationDocuments,
   applicationInformations,
   applicationMentors,
+  applicationStatusActions,
   applicationStatuses,
   checkTimes,
   dailyWorkLogs,
@@ -53,6 +54,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   favorites: many(favorites),
   applicationStatuses: many(applicationStatuses),
   dailyWorkLogs: many(dailyWorkLogs),
+  applicationStatusActions: many(applicationStatusActions),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -214,6 +216,21 @@ export const applicationStatusesRelations = relations(
     applicationInformations: many(applicationInformations),
     applicationDocuments: many(applicationDocuments),
     applicationMentors: many(applicationMentors),
+    applicationStatusActions: many(applicationStatusActions),
+  })
+);
+
+export const applicationStatusActionsRelations = relations(
+  applicationStatusActions,
+  ({ one }) => ({
+    applicationStatus: one(applicationStatuses, {
+      fields: [applicationStatusActions.applicationStatusId],
+      references: [applicationStatuses.id],
+    }),
+    user: one(users, {
+      fields: [applicationStatusActions.actionBy],
+      references: [users.id],
+    }),
   })
 );
 
