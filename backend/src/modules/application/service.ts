@@ -788,6 +788,7 @@ export class ApplicationService {
           applicationStatus: applicationStatuses.applicationStatus,
           internshipRound: applicationStatuses.internshipRound,
           isActive: applicationStatuses.isActive,
+          statusNote: applicationStatuses.statusNote,
           createdAt: applicationStatuses.createdAt,
           updatedAt: applicationStatuses.updatedAt,
 
@@ -845,6 +846,7 @@ export class ApplicationService {
           applicationStatus: applicationStatuses.applicationStatus,
           internshipRound: applicationStatuses.internshipRound,
           isActive: applicationStatuses.isActive,
+          statusNote: applicationStatuses.statusNote,
           createdAt: applicationStatuses.createdAt,
           updatedAt: applicationStatuses.updatedAt,
 
