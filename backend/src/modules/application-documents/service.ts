@@ -3,7 +3,7 @@ import type { SQL } from "drizzle-orm";
 import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
-import { applicationDocuments, applicationStatuses } from "@/db/schema";
+import { applicationDocuments, applicationStatuses, users } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type { AdminListDocsQueryType } from "./model";
 
@@ -22,14 +22,77 @@ function docTypeName(docTypeId: number) {
   }
 }
 
+function docTypeLabel(docTypeId: number) {
+  switch (docTypeId) {
+    case 1:
+      return "TRANSCRIPT";
+    case 2:
+      return "RESUME";
+    case 3:
+      return "PORTFOLIO";
+    case 4:
+      return "REQUEST_LETTER";
+    default:
+      return "DOCUMENT";
+  }
+}
+
 function parseApplicationIdFromKey(key: string): number | null {
   // expected: applications/{applicationId}/{docTypeId}/{filename}
   const parts = key.split("/");
-  if (parts.length < 2) return null;
+  if (parts.length < 4) return null;
   if (parts[0] !== "applications") return null;
 
   const id = Number(parts[1]);
   return Number.isFinite(id) ? id : null;
+}
+
+function parseDocTypeIdFromKey(key: string): number | null {
+  // expected: applications/{applicationId}/{docTypeId}/{filename}
+  const parts = key.split("/");
+  if (parts.length < 4) return null;
+  if (parts[0] !== "applications") return null;
+
+  const id = Number(parts[2]);
+  return Number.isFinite(id) ? id : null;
+}
+
+function getExtFromKey(key: string): string {
+  const name = key.split("/").pop() ?? "";
+  const idx = name.lastIndexOf(".");
+  return idx >= 0 ? name.slice(idx + 1) : "bin";
+}
+
+function normalizeName(input: string) {
+  return input
+    .normalize("NFC")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^\p{L}\p{M}\p{N}_-]/gu, "");
+}
+
+function formatDateYYYYMMDD(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
+}
+
+function toAsciiFilename(input: string, fallback = "file") {
+  const base = input
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^A-Za-z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return base.length > 0 ? base : fallback;
+}
+
+function contentDispositionInline(filenameUtf8: string) {
+  const ascii = toAsciiFilename(filenameUtf8, "file");
+  const encoded = encodeURIComponent(filenameUtf8);
+  return `inline; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
 export class ApplicationDocumentsService {
@@ -38,9 +101,9 @@ export class ApplicationDocumentsService {
     query: AdminListDocsQueryType
   ) {
     const [me] = await db
-      .select({ roleId: sql<number>`"users"."role_id"` })
-      .from(sql`users`)
-      .where(sql`"users"."id" = ${requesterUserId}`);
+      .select({ roleId: users.roleId })
+      .from(users)
+      .where(eq(users.id, requesterUserId));
 
     if (!me || me.roleId !== 1) throw new ForbiddenError("อนุญาตเฉพาะ Admin");
 
@@ -109,25 +172,33 @@ export class ApplicationDocumentsService {
     return rows.map((r) => ({
       ...r,
       docType: docTypeName(r.docTypeId),
+      filename: r.docFile?.split("/").pop() ?? "file",
     }));
   }
 
   async streamDocument(
     requesterUserId: string,
     key: string
-  ): Promise<{ body: ReadableStream; contentType: string; filename: string }> {
+  ): Promise<{
+    body: ReadableStream;
+    contentType: string;
+    filename: string;
+    contentDisposition: string;
+  }> {
     const [me] = await db
       .select({
-        roleId: sql<number>`"users"."role_id"`,
-        departmentId: sql<number | null>`"users"."department_id"`,
+        roleId: users.roleId,
+        departmentId: users.departmentId,
       })
-      .from(sql`users`)
-      .where(sql`"users"."id" = ${requesterUserId}`);
+      .from(users)
+      .where(eq(users.id, requesterUserId));
 
     if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
 
     const applicationId = parseApplicationIdFromKey(key);
-    if (!applicationId) throw new ForbiddenError("key ไม่ถูกต้อง");
+    const docTypeIdFromKey = parseDocTypeIdFromKey(key);
+    if (!applicationId || !docTypeIdFromKey)
+      throw new ForbiddenError("key ไม่ถูกต้อง");
 
     const [app] = await db
       .select({
@@ -150,7 +221,38 @@ export class ApplicationDocumentsService {
       throw new ForbiddenError("ไม่มีสิทธิ์เข้าถึงเอกสารนี้");
     }
 
-    const filename = key.split("/").pop() ?? "file";
+    const [docRow] = await db
+      .select({
+        docTypeId: applicationDocuments.docTypeId,
+        createdAt: applicationDocuments.createdAt,
+        updatedAt: applicationDocuments.updatedAt,
+      })
+      .from(applicationDocuments)
+      .where(eq(applicationDocuments.docFile, key));
+
+    const [student] = await db
+      .select({
+        fname: users.fname,
+        lname: users.lname,
+      })
+      .from(users)
+      .where(eq(users.id, app.userId));
+
+    const ext = getExtFromKey(key);
+
+    const dateBase =
+      (docRow?.updatedAt as unknown as Date | undefined) ??
+      (docRow?.createdAt as unknown as Date | undefined) ??
+      new Date();
+
+    const docType = docTypeLabel(docRow?.docTypeId ?? docTypeIdFromKey);
+
+    const fname = normalizeName(student?.fname ?? "student");
+    const lname = normalizeName(student?.lname ?? "unknown");
+
+    const filename = `${fname}_${lname}_${docType}_${formatDateYYYYMMDD(
+      dateBase
+    )}.${ext}`;
 
     const res = await s3Client.send(
       new GetObjectCommand({
@@ -163,6 +265,7 @@ export class ApplicationDocumentsService {
       body: res.Body as ReadableStream,
       contentType: res.ContentType ?? "application/octet-stream",
       filename,
+      contentDisposition: contentDispositionInline(filename),
     };
   }
 }

@@ -33,29 +33,20 @@ export const ApplicationDocuments = new Elysia({
 
   .get(
     "/file",
-    async ({ session, query, set }) => {
-      const { body, contentType, filename } = await service.streamDocument(
-        session.userId,
-        query.key
-      );
+    async ({ query, session, set }) => {
+      const { body, contentType, contentDisposition } =
+        await service.streamDocument(session.userId, query.key);
 
-      set.headers["Content-Type"] = contentType;
-      set.headers["Content-Disposition"] = query.download
-        ? `attachment; filename="${filename}"`
-        : `inline; filename="${filename}"`;
+      set.headers["content-type"] = contentType;
+      set.headers["content-disposition"] = contentDisposition;
+      set.headers["cache-control"] = "no-store";
 
-      set.status = 200;
       return body;
     },
     {
       auth: true,
       query: t.Object({
-        key: t.String({ minLength: 1 }),
-        download: t.Optional(t.Boolean()),
+        key: t.String(),
       }),
-      detail: {
-        summary: "preview/download document file",
-        description: "คืนไฟล์จาก MinIO ผ่าน backend เพื่อให้ preview/download",
-      },
     }
   );
