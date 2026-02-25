@@ -1,6 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, count, desc, eq, ilike, inArray, ne, or } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
 import {
   BadRequestError,
   ForbiddenError,
@@ -207,6 +206,28 @@ export class ApplicationService {
     docTypeId: 1 | 2 | 3,
     file: File
   ) {
+    const formatDateYYYYMMDD = (date = new Date()) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}${m}${d}`;
+    };
+
+    const normalizeName = (name: string) => name.trim().replace(/\s+/g, "_");
+
+    const docTypeLabel = (id: number) => {
+      switch (id) {
+        case 1:
+          return "TRANSCRIPT";
+        case 2:
+          return "RESUME";
+        case 3:
+          return "PORTFOLIO";
+        default:
+          return "DOCUMENT";
+      }
+    };
+
     return await db.transaction(async (tx) => {
       const [app] = await tx
         .select({
@@ -248,8 +269,22 @@ export class ApplicationService {
         throw new BadRequestError("ตำแหน่งนี้ไม่ได้ require Portfolio");
       }
 
+      const [student] = await tx
+        .select({ fname: users.fname, lname: users.lname })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!student?.fname || !student?.lname) {
+        throw new BadRequestError("ข้อมูลชื่อผู้ใช้งานไม่ครบ");
+      }
+
       const ext = file.name.split(".").pop() || "bin";
-      const filename = `${uuidv4()}.${ext}`;
+      const fname = normalizeName(student.fname);
+      const lname = normalizeName(student.lname);
+      const docType = docTypeLabel(docTypeId);
+      const dateStr = formatDateYYYYMMDD();
+
+      const filename = `${fname}_${lname}_${docType}_${dateStr}.${ext}`;
       const s3Key = `applications/${applicationId}/${docTypeId}/${filename}`;
 
       const arrayBuffer = await file.arrayBuffer();
@@ -347,6 +382,7 @@ export class ApplicationService {
 
         return {
           key: s3Key,
+          filename,
           docTypeId,
           validationStatus: nextValidationStatus,
           applicationStatus: isComplete
@@ -357,6 +393,7 @@ export class ApplicationService {
 
       return {
         key: s3Key,
+        filename,
         docTypeId,
         validationStatus: nextValidationStatus,
         applicationStatus: "PENDING_REQUEST",
@@ -519,6 +556,15 @@ export class ApplicationService {
   }
 
   async uploadRequestLetter(userId: string, applicationId: number, file: File) {
+    const formatDateYYYYMMDD = (date = new Date()) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}${m}${d}`;
+    };
+
+    const normalizeName = (name: string) => name.trim().replace(/\s+/g, "_");
+
     return await db.transaction(async (tx) => {
       const [app] = await tx
         .select({
@@ -535,8 +581,21 @@ export class ApplicationService {
       if (app.status !== "PENDING_REQUEST")
         throw new BadRequestError("ไม่อยู่ในขั้นตอนรอยื่นเอกสารขอความอนุเคราะห์");
 
+      const [student] = await tx
+        .select({ fname: users.fname, lname: users.lname })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!student?.fname || !student?.lname) {
+        throw new BadRequestError("ข้อมูลชื่อผู้ใช้งานไม่ครบ");
+      }
+
       const ext = file.name.split(".").pop() || "bin";
-      const filename = `${uuidv4()}.${ext}`;
+      const fname = normalizeName(student.fname);
+      const lname = normalizeName(student.lname);
+      const dateStr = formatDateYYYYMMDD();
+
+      const filename = `${fname}_${lname}_REQUEST_LETTER_${dateStr}.${ext}`;
       const s3Key = `applications/${applicationId}/4/${filename}`;
 
       const arrayBuffer = await file.arrayBuffer();
@@ -607,6 +666,7 @@ export class ApplicationService {
 
       return {
         key: s3Key,
+        filename,
         validationStatus: "PENDING",
         applicationStatus: "PENDING_REVIEW",
       };
