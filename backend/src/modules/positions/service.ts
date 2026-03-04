@@ -60,6 +60,7 @@ function computeAutoStatus(
 ): "NOT_OPEN_YET" | "OPEN" | "EXPIRED" {
   const now = new Date();
 
+  if (!recruitStart && !recruitEnd) return "OPEN";
   if (!recruitStart || !recruitEnd) return "OPEN";
 
   const start = new Date(recruitStart);
@@ -389,12 +390,9 @@ export class PositionService {
         .from(internshipPositions)
         .where(eq(internshipPositions.id, id));
 
-      if (!existing) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
+      if (!existing) throw new NotFoundError(`ไม่พบใบประกาศงรหัส ${id}`);
       if (existing.departmentId !== departmentId)
-        throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขตำแหน่งของกองอื่น");
-      if (existing.recruitmentStatus === "EXPIRED") {
-        throw new ForbiddenError("ประกาศที่หมดอายุแล้วไม่สามารถเปลี่ยนสถานะได้");
-      }
+        throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบประกาศของกองอื่น");
 
       const newRecruitStart = data.recruitStart ?? existing.recruitStart;
       const newRecruitEnd = data.recruitEnd ?? existing.recruitEnd;
@@ -404,6 +402,7 @@ export class PositionService {
       let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED" =
         autoStatus;
 
+      // manual close/open only allowed when auto is OPEN
       if (data.recruitmentStatus === "CLOSE") {
         if (autoStatus !== "OPEN") {
           throw new ForbiddenError(
@@ -411,11 +410,28 @@ export class PositionService {
           );
         }
         finalStatus = "CLOSE";
+      } else if (data.recruitmentStatus === "OPEN") {
+        // allow reopening only if auto says OPEN
+        if (autoStatus !== "OPEN") {
+          throw new ForbiddenError(
+            "ไม่สามารถเปิดรับสมัครได้ เพราะยังไม่ถึงเวลาเปิดรับสมัครหรือประกาศหมดอายุ"
+          );
+        }
+        finalStatus = "OPEN";
+      } else {
+        // not provided => keep manual CLOSE if already closed and still within OPEN window,
+        // otherwise follow autoStatus
+        if (existing.recruitmentStatus === "CLOSE" && autoStatus === "OPEN") {
+          finalStatus = "CLOSE";
+        } else {
+          finalStatus = autoStatus;
+        }
       }
 
       const [updated] = await tx
         .update(internshipPositions)
         .set({
+          // อัปเดตเฉพาะ field ที่มีจริงในตาราง
           name: data.name ?? undefined,
           location: data.location ?? undefined,
           positionCount: data.positionCount ?? undefined,
@@ -444,7 +460,7 @@ export class PositionService {
         )
         .returning();
 
-      if (!updated) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
+      if (!updated) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
 
       if (data.mentorStaffIds) {
         await tx
@@ -489,7 +505,7 @@ export class PositionService {
         )
         .returning();
 
-      if (!deleted) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
+      if (!deleted) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
 
       await staffLogsService.log(
         tx,
@@ -497,7 +513,7 @@ export class PositionService {
         `DELETE_POSITION positionId=${id}`
       );
 
-      return { success: true, message: "ลบตำแหน่งเรียบร้อยแล้ว" };
+      return { success: true, message: "ลบใบประกาศเรียบร้อยแล้ว" };
     });
   }
 }
