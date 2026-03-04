@@ -284,6 +284,7 @@ CREATE TABLE public.internship_positions (
   department_id INT NOT NULL,
   location VARCHAR(255),
   position_count INT,
+  accepted_count INT NOT NULL DEFAULT 0,
   major VARCHAR(255),
 
   recruit_start TIMESTAMP, 

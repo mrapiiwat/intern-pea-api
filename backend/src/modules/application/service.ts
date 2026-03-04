@@ -1,5 +1,17 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, count, desc, eq, ilike, inArray, ne, or } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
@@ -71,13 +83,23 @@ export class ApplicationService {
           recruitmentStatus: internshipPositions.recruitmentStatus,
           resumeRq: internshipPositions.resumeRq,
           portfolioRq: internshipPositions.portfolioRq,
+          positionCount: internshipPositions.positionCount,
+          acceptedCount: internshipPositions.acceptedCount,
         })
         .from(internshipPositions)
         .where(eq(internshipPositions.id, positionId));
 
       if (!pos) throw new NotFoundError("ไม่พบตำแหน่งฝึกงาน");
+
       if (pos.recruitmentStatus !== "OPEN") {
         throw new BadRequestError("ตำแหน่งฝึกงานนี้ไม่ได้เปิดรับสมัคร");
+      }
+
+      if (
+        pos.positionCount !== null &&
+        pos.acceptedCount >= pos.positionCount
+      ) {
+        throw new BadRequestError("ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว");
       }
 
       return {
@@ -489,6 +511,33 @@ export class ApplicationService {
         throw new BadRequestError("สถานะไม่ถูกต้อง");
       if (app.departmentId !== owner.departmentId)
         throw new ForbiddenError("ไม่ใช่กองของตน");
+
+      const [quota] = await tx
+        .update(internshipPositions)
+        .set({
+          acceptedCount: sql`${internshipPositions.acceptedCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(internshipPositions.id, app.positionId),
+            or(
+              isNull(internshipPositions.positionCount),
+              lt(
+                internshipPositions.acceptedCount,
+                internshipPositions.positionCount
+              )
+            )
+          )
+        )
+        .returning({
+          id: internshipPositions.id,
+          acceptedCount: internshipPositions.acceptedCount,
+          positionCount: internshipPositions.positionCount,
+        });
+
+      if (!quota)
+        throw new BadRequestError("จำนวนที่รับสมัครเต็มแล้ว ไม่สามารถตอบรับเพิ่มได้");
 
       await tx
         .update(applicationStatuses)

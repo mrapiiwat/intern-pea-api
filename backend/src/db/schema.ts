@@ -502,6 +502,7 @@ export const internshipPositions = pgTable(
 
     location: varchar({ length: 255 }),
     positionCount: integer("position_count"),
+    acceptedCount: integer("accepted_count").notNull().default(0),
     major: varchar("major", { length: 255 }),
 
     recruitStart: timestamp("recruit_start", { mode: "string" }),
