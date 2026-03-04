@@ -54,6 +54,23 @@ type EnrichedPosition = PositionWithMentors & {
   office: OfficeDTO | null;
 };
 
+function computeAutoStatus(
+  recruitStart: string | Date | null,
+  recruitEnd: string | Date | null
+): "NOT_OPEN_YET" | "OPEN" | "EXPIRED" {
+  const now = new Date();
+
+  if (!recruitStart || !recruitEnd) return "OPEN";
+
+  const start = new Date(recruitStart);
+  const end = new Date(recruitEnd);
+
+  if (now < start) return "NOT_OPEN_YET";
+  if (now > end) return "EXPIRED";
+
+  return "OPEN";
+}
+
 export class PositionService {
   private async assertUserExists(userId: string) {
     const [user] = await db
@@ -200,7 +217,7 @@ export class PositionService {
             )
         : [];
 
-    // department info 
+    // department info
     const departmentData =
       departmentIds.length > 0
         ? await db
@@ -297,6 +314,15 @@ export class PositionService {
       await this.getUserDepartmentAndOffice(userId);
 
     return await db.transaction(async (tx) => {
+      const autoStatus = computeAutoStatus(
+        data.recruitStart ?? null,
+        data.recruitEnd ?? null
+      );
+
+      if (data.recruitmentStatus === "CLOSE") {
+        throw new ForbiddenError("ไม่สามารถสร้างประกาศที่มีสถานะ CLOSE ได้");
+      }
+
       const [position] = await tx
         .insert(internshipPositions)
         .values({
@@ -320,7 +346,7 @@ export class PositionService {
           requirement: data.requirement ?? null,
           benefits: data.benefits ?? null,
 
-          recruitmentStatus: data.recruitmentStatus,
+          recruitmentStatus: autoStatus,
         })
         .returning();
 
@@ -352,10 +378,44 @@ export class PositionService {
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
 
     return await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({
+          id: internshipPositions.id,
+          departmentId: internshipPositions.departmentId,
+          recruitStart: internshipPositions.recruitStart,
+          recruitEnd: internshipPositions.recruitEnd,
+          recruitmentStatus: internshipPositions.recruitmentStatus,
+        })
+        .from(internshipPositions)
+        .where(eq(internshipPositions.id, id));
+
+      if (!existing) throw new NotFoundError(`ไม่พบตำแหน่งรหัส ${id}`);
+      if (existing.departmentId !== departmentId)
+        throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขตำแหน่งของกองอื่น");
+      if (existing.recruitmentStatus === "EXPIRED") {
+        throw new ForbiddenError("ประกาศที่หมดอายุแล้วไม่สามารถเปลี่ยนสถานะได้");
+      }
+
+      const newRecruitStart = data.recruitStart ?? existing.recruitStart;
+      const newRecruitEnd = data.recruitEnd ?? existing.recruitEnd;
+
+      const autoStatus = computeAutoStatus(newRecruitStart, newRecruitEnd);
+
+      let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED" =
+        autoStatus;
+
+      if (data.recruitmentStatus === "CLOSE") {
+        if (autoStatus !== "OPEN") {
+          throw new ForbiddenError(
+            "สามารถปิดประกาศได้เฉพาะตอนที่สถานะเป็น OPEN เท่านั้น"
+          );
+        }
+        finalStatus = "CLOSE";
+      }
+
       const [updated] = await tx
         .update(internshipPositions)
         .set({
-          // อัปเดตเฉพาะ field ที่มีจริงในตาราง
           name: data.name ?? undefined,
           location: data.location ?? undefined,
           positionCount: data.positionCount ?? undefined,
@@ -373,7 +433,7 @@ export class PositionService {
           requirement: data.requirement ?? undefined,
           benefits: data.benefits ?? undefined,
 
-          recruitmentStatus: data.recruitmentStatus ?? undefined,
+          recruitmentStatus: finalStatus,
           updatedAt: new Date(),
         })
         .where(

@@ -44,8 +44,10 @@ export const leaveStatusEnum = pgEnum("leave_status_enum", [
   "REJECTED",
 ]);
 export const recruitmentStatusEnum = pgEnum("recruitment_status_enum", [
+  "NOT_OPEN_YET",
   "OPEN",
   "CLOSE",
+  "EXPIRED",
 ]);
 export const staffRoleEnum = pgEnum("staff_role_enum", [
   "OWNER",
