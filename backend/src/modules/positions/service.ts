@@ -66,7 +66,6 @@ export class PositionService {
 
   /**
    * ผู้ใช้ต้องมี department_id
-   * และเราจะดึง office_id จาก departments เพื่อใช้กับ internship_positions
    */
   private async getUserDepartmentAndOffice(userId: string): Promise<{
     departmentId: number;
@@ -95,7 +94,7 @@ export class PositionService {
   /**
    * GET /position
    * filter ได้ด้วย search, department, office
-   * แสดง mentor (หลายคน)
+   * แสดง mentor
    */
   async findAll(query: model.GetPositionsQueryType) {
     const {
@@ -158,7 +157,6 @@ export class PositionService {
         internshipPositions.id
       );
 
-    // รวม mentors ให้เป็นตำแหน่งละก้อน
     const map = new Map<number, PositionWithMentors>();
 
     for (const r of rows) {
@@ -202,7 +200,7 @@ export class PositionService {
             )
         : [];
 
-    // department info (โครงสร้างใหม่)
+    // department info 
     const departmentData =
       departmentIds.length > 0
         ? await db
@@ -290,8 +288,8 @@ export class PositionService {
 
   /**
    * POST /position
-   * ผูก departmentId + officeId จาก user (derive จาก departments)
-   * ผูก mentor หลายคนได้
+   * ผูก departmentId + officeId จาก user
+   * ผูก mentor
    */
   async create(userId: string, data: model.CreatePositionBodyType) {
     await this.assertUserExists(userId);
@@ -348,7 +346,6 @@ export class PositionService {
   /**
    * PUT /position/:id
    * แก้ได้เฉพาะ position ใน department ของตัวเอง
-   * mentor set ใหม่ทั้งชุด
    */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
     await this.assertUserExists(userId);
