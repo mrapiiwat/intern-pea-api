@@ -1,11 +1,16 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { studentProfiles, users } from "@/db/schema";
+import {
+  applicationStatuses,
+  internshipPositions,
+  studentProfiles,
+  users,
+} from "@/db/schema";
 import type { UpdateStudentInternshipStatusBodyType } from "./model";
 
 export class OwnerStudentStatusService {
@@ -15,7 +20,6 @@ export class OwnerStudentStatusService {
     body: UpdateStudentInternshipStatusBodyType
   ) {
     return await db.transaction(async (tx) => {
-      // check role + department
       const [owner] = await tx
         .select({
           roleId: users.roleId,
@@ -29,7 +33,6 @@ export class OwnerStudentStatusService {
         throw new ForbiddenError("อนุญาตเฉพาะ Admin, Owner");
       if (!owner.departmentId) throw new ForbiddenError("Owner ไม่ได้สังกัดกอง");
 
-      // check student user exists + same department
       const [stuUser] = await tx
         .select({
           id: users.id,
@@ -42,12 +45,10 @@ export class OwnerStudentStatusService {
       if (!stuUser) throw new NotFoundError("ไม่พบนักศึกษา");
       if (stuUser.roleId !== 3) throw new BadRequestError("ผู้ใช้นี้ไม่ใช่นักศึกษา");
 
-      // rule: cannot update other department
       if (stuUser.departmentId !== owner.departmentId) {
         throw new ForbiddenError("ไม่สามารถจัดการนักศึกษาต่างกองได้");
       }
 
-      // check student profile + must be ACTIVE
       const [sp] = await tx
         .select({
           id: studentProfiles.id,
@@ -64,32 +65,51 @@ export class OwnerStudentStatusService {
         );
       }
 
-      // rule: only CANCEL/COMPLETE already enforced by schema
+      const [app] = await tx
+        .select({
+          positionId: applicationStatuses.positionId,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.userId, studentUserId))
+        .limit(1);
+
+      if (!app) throw new NotFoundError("ไม่พบข้อมูลการสมัครของนักศึกษา");
+
       const nextStatus = body.status;
 
-      // rule: if CANCEL must have reason
       if (nextStatus === "CANCEL") {
         const reason = body.reason?.trim();
         if (!reason) throw new BadRequestError("กรุณาระบุเหตุผลการ CANCEL");
+
+        await tx
+          .update(internshipPositions)
+          .set({
+            acceptedCount: sql`${internshipPositions.acceptedCount} - 1`,
+          })
+          .where(eq(internshipPositions.id, app.positionId));
 
         await tx
           .update(studentProfiles)
           .set({
             internshipStatus: "CANCEL",
             statusNote: reason,
-            // updatedAt: new Date(), // ถ้าคอลัมน์มี
           })
           .where(eq(studentProfiles.userId, studentUserId));
 
         return { studentUserId, internshipStatus: "CANCEL" };
       }
 
-      // COMPLETE
+      await tx
+        .update(internshipPositions)
+        .set({
+          acceptedCount: sql`${internshipPositions.acceptedCount} - 1`,
+        })
+        .where(eq(internshipPositions.id, app.positionId));
+
       await tx
         .update(studentProfiles)
         .set({
           internshipStatus: "COMPLETE",
-          // statusNote: null
         })
         .where(eq(studentProfiles.userId, studentUserId));
 
