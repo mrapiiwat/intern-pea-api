@@ -1,8 +1,9 @@
 import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
-import { ForbiddenError } from "@/common/exceptions";
+import { BadRequestError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
+  applicationStatuses,
   departments,
   internshipPositionMentors,
   internshipPositions,
@@ -386,6 +387,7 @@ export class PositionService {
           recruitStart: internshipPositions.recruitStart,
           recruitEnd: internshipPositions.recruitEnd,
           recruitmentStatus: internshipPositions.recruitmentStatus,
+          acceptedCount: internshipPositions.acceptedCount,
         })
         .from(internshipPositions)
         .where(eq(internshipPositions.id, id));
@@ -393,6 +395,21 @@ export class PositionService {
       if (!existing) throw new NotFoundError(`ไม่พบใบประกาศงรหัส ${id}`);
       if (existing.departmentId !== departmentId)
         throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบประกาศของกองอื่น");
+
+      if (data.positionCount !== undefined) {
+        if (data.positionCount !== null) {
+          const nextCount = Number(data.positionCount);
+          if (!Number.isFinite(nextCount) || nextCount < 0) {
+            throw new BadRequestError("positionCount ไม่ถูกต้อง");
+          }
+          const accepted = Number(existing.acceptedCount ?? 0);
+          if (nextCount < accepted) {
+            throw new BadRequestError(
+              `ไม่สามารถลด positionCount ให้ต่ำกว่า acceptedCount (acceptedCount=${accepted})`
+            );
+          }
+        }
+      }
 
       const newRecruitStart = data.recruitStart ?? existing.recruitStart;
       const newRecruitEnd = data.recruitEnd ?? existing.recruitEnd;
@@ -411,7 +428,6 @@ export class PositionService {
         }
         finalStatus = "CLOSE";
       } else if (data.recruitmentStatus === "OPEN") {
-        // allow reopening only if auto says OPEN
         if (autoStatus !== "OPEN") {
           throw new ForbiddenError(
             "ไม่สามารถเปิดรับสมัครได้ เพราะยังไม่ถึงเวลาเปิดรับสมัครหรือประกาศหมดอายุ"
@@ -419,8 +435,6 @@ export class PositionService {
         }
         finalStatus = "OPEN";
       } else {
-        // not provided => keep manual CLOSE if already closed and still within OPEN window,
-        // otherwise follow autoStatus
         if (existing.recruitmentStatus === "CLOSE" && autoStatus === "OPEN") {
           finalStatus = "CLOSE";
         } else {
@@ -495,17 +509,33 @@ export class PositionService {
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
 
     return await db.transaction(async (tx) => {
-      const [deleted] = await tx
-        .delete(internshipPositions)
-        .where(
-          and(
-            eq(internshipPositions.id, id),
-            eq(internshipPositions.departmentId, departmentId)
-          )
-        )
-        .returning();
+      const [pos] = await tx
+        .select({
+          id: internshipPositions.id,
+          departmentId: internshipPositions.departmentId,
+        })
+        .from(internshipPositions)
+        .where(eq(internshipPositions.id, id));
 
-      if (!deleted) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
+      if (!pos) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
+      if (pos.departmentId !== departmentId)
+        throw new ForbiddenError("ไม่มีสิทธิ์ลบใบประกาศของกองอื่น");
+
+      const [hasApplication] = await tx
+        .select({ id: applicationStatuses.id })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.positionId, id))
+        .limit(1);
+
+      if (hasApplication) {
+        throw new BadRequestError(
+          "ไม่สามารถลบใบประกาศได้ เนื่องจากมีใบสมัครผูกอยู่กับตำแหน่งนี้"
+        );
+      }
+
+      await tx
+        .delete(internshipPositions)
+        .where(eq(internshipPositions.id, id));
 
       await staffLogsService.log(
         tx,
