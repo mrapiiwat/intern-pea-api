@@ -55,6 +55,86 @@ export class ApplicationService {
     });
   }
 
+  private async cancelPendingApplicationsWhenPositionFilled(
+    tx: DbTx,
+    positionId: number,
+    acceptedApplicationId: number,
+    actionBy: string
+  ) {
+    const [position] = await tx
+      .select({
+        positionCount: internshipPositions.positionCount,
+        acceptedCount: internshipPositions.acceptedCount,
+      })
+      .from(internshipPositions)
+      .where(eq(internshipPositions.id, positionId));
+
+    if (!position) return;
+
+    if (
+      position.positionCount === null ||
+      position.acceptedCount < position.positionCount
+    ) {
+      return;
+    }
+
+    const pendingStatuses = [
+      "PENDING_DOCUMENT",
+      "PENDING_INTERVIEW",
+      "PENDING_CONFIRMATION",
+    ] as const;
+
+    const pendingApps = await tx
+      .select({
+        id: applicationStatuses.id,
+        userId: applicationStatuses.userId,
+        status: applicationStatuses.applicationStatus,
+      })
+      .from(applicationStatuses)
+      .where(
+        and(
+          eq(applicationStatuses.positionId, positionId),
+          inArray(applicationStatuses.applicationStatus, pendingStatuses),
+          ne(applicationStatuses.id, acceptedApplicationId)
+        )
+      );
+
+    if (pendingApps.length === 0) return;
+
+    const applicationIds = pendingApps.map((a) => a.id);
+    const userIds = [...new Set(pendingApps.map((a) => a.userId))];
+
+    await tx
+      .update(applicationStatuses)
+      .set({
+        applicationStatus: "CANCEL",
+        statusNote: "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
+        updatedAt: new Date(),
+      })
+      .where(inArray(applicationStatuses.id, applicationIds));
+
+    await tx
+      .update(studentProfiles)
+      .set({
+        internshipStatus: "IDLE",
+        statusNote: "ตำแหน่งที่สมัครมีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
+      })
+      .where(inArray(studentProfiles.userId, userIds));
+
+    for (const app of pendingApps) {
+      await this.logAppStatusAction(tx, app.id, actionBy, app.status, "CANCEL");
+    }
+
+    await tx.insert(notifications).values(
+      pendingApps.map((app) => ({
+        userId: app.userId,
+        title: "การสมัครถูกยกเลิก",
+        message: "การสมัครของคุณถูกยกเลิกเนื่องจากตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
+        isRead: false,
+      }))
+    );
+  }
+
   async apply(userId: string, positionId: number) {
     return await db.transaction(async (tx) => {
       const [user] = await tx
@@ -610,6 +690,13 @@ export class ApplicationService {
         tx,
         ownerUserId,
         `CONFIRM_ACCEPT applicationId=${applicationId}`
+      );
+
+      await this.cancelPendingApplicationsWhenPositionFilled(
+        tx,
+        app.positionId,
+        applicationId,
+        ownerUserId
       );
 
       return {
