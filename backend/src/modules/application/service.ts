@@ -107,7 +107,7 @@ export class ApplicationService {
     await tx
       .update(applicationStatuses)
       .set({
-        applicationStatus: "CANCEL",
+        applicationStatus: "IS_FULL",
         statusNote: "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
         updatedAt: new Date(),
       })
