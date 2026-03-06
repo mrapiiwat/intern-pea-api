@@ -122,7 +122,13 @@ export class ApplicationService {
       .where(inArray(studentProfiles.userId, userIds));
 
     for (const app of pendingApps) {
-      await this.logAppStatusAction(tx, app.id, actionBy, app.status, "IS_FULL");
+      await this.logAppStatusAction(
+        tx,
+        app.id,
+        actionBy,
+        app.status,
+        "IS_FULL"
+      );
     }
 
     await tx.insert(notifications).values(
