@@ -400,7 +400,7 @@ export class ApplicationService {
               owners.map((o) => ({
                 userId: o.id,
                 title: "มีใบสมัครใหม่รอสัมภาษณ์",
-                message: `มีนักศึกษาส่งเอกสารครบแล้ว สำหรับตำแหน่ง "${app.positionName}"`,
+                message: `มีนักศึกษาส่งเอกสารครบแล้ว สำหรับตำแหน่ง ${app.positionName}`,
                 isRead: false,
               }))
             );
@@ -482,7 +482,7 @@ export class ApplicationService {
       await tx.insert(notifications).values({
         userId: app.userId,
         title: "อัปเดตสถานะการสมัคร",
-        message: `คุณผ่านขั้นตอนสัมภาษณ์แล้ว สำหรับตำแหน่ง "${app.positionName}"`,
+        message: `คุณผ่านขั้นตอนสัมภาษณ์แล้ว สำหรับตำแหน่ง ${app.positionName}`,
         isRead: false,
       });
 
@@ -602,7 +602,7 @@ export class ApplicationService {
       await tx.insert(notifications).values({
         userId: app.userId,
         title: "อัปเดตสถานะการสมัคร",
-        message: `คุณได้รับการตอบรับแล้วในตำแหน่ง "${app.positionName}" กรุณายื่นเอกสารขอความอนุเคราะห์`,
+        message: `คุณได้รับการตอบรับแล้วในตำแหน่ง ${app.positionName} กรุณายื่นเอกสารขอความอนุเคราะห์`,
         isRead: false,
       });
 
@@ -727,7 +727,7 @@ export class ApplicationService {
           admins.map((a) => ({
             userId: a.id,
             title: "มีเอกสารรอตรวจสอบ",
-            message: `มีนักศึกษาส่งเอกสารขอความอนุเคราะห์แล้ว สำหรับตำแหน่ง "${app.positionName}"`,
+            message: `มีนักศึกษาส่งเอกสารขอความอนุเคราะห์แล้ว สำหรับตำแหน่ง ${app.positionName}`,
             isRead: false,
           }))
         );
@@ -829,7 +829,7 @@ export class ApplicationService {
           await tx.insert(notifications).values({
             userId: app.userId,
             title: "เอกสารถูกตีกลับ",
-            message: `เอกสารถูกตีกลับสำหรับตำแหน่ง "${app.positionName}" กรุณาอัปโหลดใหม่`,
+            message: `เอกสารถูกตีกลับสำหรับตำแหน่ง ${app.positionName} กรุณาอัปโหลดใหม่`,
             isRead: false,
           });
 
@@ -882,7 +882,7 @@ export class ApplicationService {
           await tx.insert(notifications).values({
             userId: app.userId,
             title: "การสมัครเสร็จสมบูรณ์",
-            message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง "${app.positionName}" เสร็จสมบูรณ์`,
+            message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์`,
             isRead: false,
           });
 
@@ -1373,7 +1373,7 @@ export class ApplicationService {
       await tx.insert(notifications).values({
         userId: app.studentUserId,
         title: "การสมัครถูกยกเลิก",
-        message: `การสมัครในตำแหน่ง "${app.positionName}" ถูกยกเลิกโดยกองงาน`,
+        message: `การสมัครในตำแหน่ง ${app.positionName} ถูกยกเลิกโดยกองงาน`,
         isRead: false,
       });
 
