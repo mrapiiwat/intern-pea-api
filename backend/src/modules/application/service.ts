@@ -258,8 +258,13 @@ export class ApplicationService {
           status: applicationStatuses.applicationStatus,
           positionId: applicationStatuses.positionId,
           departmentId: applicationStatuses.departmentId,
+          positionName: internshipPositions.name,
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
@@ -395,7 +400,7 @@ export class ApplicationService {
               owners.map((o) => ({
                 userId: o.id,
                 title: "มีใบสมัครใหม่รอสัมภาษณ์",
-                message: `มีนักศึกษาส่งเอกสารครบแล้ว (Application #${applicationId})`,
+                message: `มีนักศึกษาส่งเอกสารครบแล้ว สำหรับตำแหน่ง "${app.positionName}"`,
                 isRead: false,
               }))
             );
@@ -438,8 +443,13 @@ export class ApplicationService {
           status: applicationStatuses.applicationStatus,
           departmentId: applicationStatuses.departmentId,
           userId: applicationStatuses.userId,
+          positionName: internshipPositions.name,
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
@@ -472,7 +482,7 @@ export class ApplicationService {
       await tx.insert(notifications).values({
         userId: app.userId,
         title: "อัปเดตสถานะการสมัคร",
-        message: `คุณผ่านขั้นตอนสัมภาษณ์แล้ว (Application #${applicationId})`,
+        message: `คุณผ่านขั้นตอนสัมภาษณ์แล้ว สำหรับตำแหน่ง "${app.positionName}"`,
         isRead: false,
       });
 
@@ -502,8 +512,13 @@ export class ApplicationService {
           departmentId: applicationStatuses.departmentId,
           userId: applicationStatuses.userId,
           positionId: applicationStatuses.positionId,
+          positionName: internshipPositions.name,
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
@@ -587,7 +602,7 @@ export class ApplicationService {
       await tx.insert(notifications).values({
         userId: app.userId,
         title: "อัปเดตสถานะการสมัคร",
-        message: `คุณได้รับการตอบรับแล้ว กรุณายื่นเอกสารขอความอนุเคราะห์ (Application #${applicationId})`,
+        message: `คุณได้รับการตอบรับแล้วในตำแหน่ง "${app.positionName}" กรุณายื่นเอกสารขอความอนุเคราะห์`,
         isRead: false,
       });
 
@@ -620,8 +635,13 @@ export class ApplicationService {
           id: applicationStatuses.id,
           ownerUserId: applicationStatuses.userId,
           status: applicationStatuses.applicationStatus,
+          positionName: internshipPositions.name,
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
@@ -707,7 +727,7 @@ export class ApplicationService {
           admins.map((a) => ({
             userId: a.id,
             title: "มีเอกสารรอตรวจสอบ",
-            message: `มีนักศึกษาส่งเอกสารขอความอนุเคราะห์แล้ว (Application #${applicationId})`,
+            message: `มีนักศึกษาส่งเอกสารขอความอนุเคราะห์แล้ว สำหรับตำแหน่ง "${app.positionName}"`,
             isRead: false,
           }))
         );
@@ -742,8 +762,13 @@ export class ApplicationService {
           id: applicationStatuses.id,
           userId: applicationStatuses.userId,
           status: applicationStatuses.applicationStatus,
+          positionName: internshipPositions.name,
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
@@ -804,7 +829,7 @@ export class ApplicationService {
           await tx.insert(notifications).values({
             userId: app.userId,
             title: "เอกสารถูกตีกลับ",
-            message: `เอกสารถูกตีกลับ กรุณาอัปโหลดใหม่ (Application #${applicationId})`,
+            message: `เอกสารถูกตีกลับสำหรับตำแหน่ง "${app.positionName}" กรุณาอัปโหลดใหม่`,
             isRead: false,
           });
 
@@ -857,7 +882,7 @@ export class ApplicationService {
           await tx.insert(notifications).values({
             userId: app.userId,
             title: "การสมัครเสร็จสมบูรณ์",
-            message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครเสร็จสมบูรณ์ (Application #${applicationId})`,
+            message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง "${app.positionName}" เสร็จสมบูรณ์`,
             isRead: false,
           });
 
@@ -1000,30 +1025,25 @@ export class ApplicationService {
 
       const conditions = [];
 
-      // owner เห็นเฉพาะของกองตัวเอง
       if (req.roleId === 2) {
         if (!req.departmentId) throw new ForbiddenError("ไม่มี department");
         conditions.push(eq(applicationStatuses.departmentId, req.departmentId));
       }
 
-      // filter: includeCanceled=false -> ไม่เอา CANCEL
       if (query.includeCanceled === false) {
         conditions.push(ne(applicationStatuses.applicationStatus, "CANCEL"));
       }
 
-      // filter: status
       if (query.status) {
         conditions.push(
           eq(applicationStatuses.applicationStatus, query.status)
         );
       }
 
-      // filter: positionId (ถ้ามีส่งมา)
       if (query.positionId) {
         conditions.push(eq(applicationStatuses.positionId, query.positionId));
       }
 
-      // search
       if (query.q && query.q.trim().length > 0) {
         const like = `%${query.q.trim()}%`;
         conditions.push(
@@ -1101,7 +1121,6 @@ export class ApplicationService {
         .limit(limit)
         .offset(offset);
 
-      // Fetch documents for each application
       const appIds = rows.map((r) => r.applicationId);
       const allDocs = appIds.length
         ? await tx
@@ -1115,7 +1134,6 @@ export class ApplicationService {
             .where(inArray(applicationDocuments.applicationStatusId, appIds))
         : [];
 
-      // Fetch mentors for each application
       const allMentors = appIds.length
         ? await tx
             .select({
@@ -1135,7 +1153,6 @@ export class ApplicationService {
             .where(inArray(applicationMentors.applicationStatusId, appIds))
         : [];
 
-      // Build docs/mentors maps
       const docsMap = new Map<number, typeof allDocs>();
       for (const doc of allDocs) {
         const arr = docsMap.get(doc.applicationStatusId) ?? [];
@@ -1251,7 +1268,6 @@ export class ApplicationService {
         throw new BadRequestError("ยกเลิกได้เฉพาะก่อนส่งเอกสาร (PENDING_DOCUMENT)");
       }
 
-      // ต้องยังไม่ส่งเอกสารใดๆ
       const [doc] = await tx
         .select({ id: applicationDocuments.id })
         .from(applicationDocuments)
@@ -1308,8 +1324,13 @@ export class ApplicationService {
           status: applicationStatuses.applicationStatus,
           departmentId: applicationStatuses.departmentId,
           studentUserId: applicationStatuses.userId,
+          positionName: internshipPositions.name,
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(eq(applicationStatuses.id, applicationId));
 
       if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
@@ -1352,7 +1373,7 @@ export class ApplicationService {
       await tx.insert(notifications).values({
         userId: app.studentUserId,
         title: "การสมัครถูกยกเลิก",
-        message: `ใบสมัครของคุณถูกยกเลิกโดยกองงาน (Application #${applicationId})`,
+        message: `การสมัครในตำแหน่ง "${app.positionName}" ถูกยกเลิกโดยกองงาน`,
         isRead: false,
       });
 
